@@ -1,0 +1,17 @@
+venv/
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+.DS_Store
+.vscode/
+.ipynb_checkpoints/
+Denoising_and_Noising_images (1).ipynb
+static/uploads/*
+!static/uploads/.gitkeep
+docker-compose.yml
+Dockerfile
+.dockerignore

@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Denoise AI | Multi-Organ Diagnostics Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Telehealth Brand Token Foundations */
+            --font-primary: 'Jokker', 'Outfit', 'Inter', Arial, sans-serif;
+            --font-size-xs: 12px;
+            --font-size-sm: 14px;
+            --font-size-md: 16px;
+            --font-size-lg: 18px;
+            --font-size-xl: 20px;
+            --font-size-2xl: 22.4px;
+            --font-size-3xl: 24px;
+            --font-size-4xl: 32px;
+            
+            --color-text-primary: #f8f8f8;
+            --color-text-secondary: #a7aeb5;
+            --color-text-tertiary: #84888b;
+            --color-surface-base: #000000;
+            --color-surface-raised: #131313;
+            --color-surface-muted: #ffffff;
+            
+            --radius-xs: 6px;
+            --radius-sm: 12px;
+            --radius-md: 20px;
+            --radius-lg: 72px;
+            
+            --motion-instant: 3ms;
+            --motion-fast: 200ms;
+            --motion-normal: 300ms;
+            
+            /* Spacing Tokens */
+            --space-1: 2.8px;
+            --space-2: 4px;
+            --space-3: 8px;
+            --space-4: 10px;
+            --space-5: 12px;
+            --space-6: 14px;
+            --space-7: 16px;
+            --space-8: 20px;
+            
+            /* ACCENT & CLINICAL TOKENS */
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.45);
+            --secondary: #a855f7;
+            --secondary-glow: rgba(168, 85, 247, 0.35);
+            --border: rgba(255, 255, 255, 0.08);
+            
+            /* Severity Colors */
+            --normal: #10b981;
+            --normal-glow: rgba(16, 185, 129, 0.15);
+            --mild: #f59e0b;
+            --mild-glow: rgba(245, 158, 11, 0.15);
+            --high: #ef4444;
+            --high-glow: rgba(239, 68, 68, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-primary); }
+
+        body {
+            background-color: #030712; /* Deep space-black instead of flat black */
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Space-Glow Orbs */
+        .bg-glow-1 {
+            position: fixed;
+            top: -20%; left: -10%;
+            width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .bg-glow-2 {
+            position: fixed;
+            bottom: -20%; right: -10%;
+            width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .bg-glow-3 {
+            position: fixed;
+            top: 30%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60vw; height: 60vw;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
+            filter: blur(140px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Sleek Technical Scanner Grid lines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.012) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.012) 1px, transparent 1px);
+            background-size: 36px 36px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .container { max-width: 1100px; width: 92%; margin-top: 3.5rem; position: relative; z-index: 10; }
+
+        header { text-align: center; margin-bottom: 3rem; }
+        
+        /* Pulse System Pill */
+        .system-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 4px 12px;
+            border-radius: var(--radius-lg);
+            font-size: var(--font-size-xs);
+            font-weight: 700;
+            color: #34d399;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: var(--space-5);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.08);
+        }
+        .system-status-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse-active 1.8s infinite alternate;
+        }
+        @keyframes pulse-active {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        h1 {
+            font-size: var(--font-size-4xl);
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--space-3);
+            letter-spacing: -0.7px;
+            text-transform: uppercase;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .subtitle { color: var(--color-text-secondary); font-size: var(--font-size-md); font-weight: 400; letter-spacing: 0.5px; }
+
+        .main-card {
+            background: rgba(19, 19, 19, 0.8);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-top: 1.5px solid rgba(255, 255, 255, 0.12); /* Subtle glass highlight */
+            border-radius: var(--radius-md);
+            padding: var(--space-8);
+            box-shadow: 
+                0 30px 60px -15px rgba(0, 0, 0, 0.8),
+                0 0 40px -10px rgba(99, 102, 241, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            margin-bottom: var(--space-8);
+            transition: all var(--motion-fast) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .main-card:hover {
+            border-color: rgba(99, 102, 241, 0.25);
+            box-shadow: 
+                0 35px 70px -15px rgba(0, 0, 0, 0.9),
+                0 0 40px -5px rgba(99, 102, 241, 0.08);
+        }
+
+        /* Patient Info Section */
+        .section-title {
+            font-size: var(--font-size-md);
+            font-weight: 700;
+            margin-bottom: var(--space-5);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            color: var(--color-text-primary);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-left: 3px solid var(--primary);
+            padding-left: var(--space-3);
+        }
+
+        .patient-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
+            padding-bottom: var(--space-8);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+
+        .form-group label {
+            font-size: var(--font-size-xs);
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-control {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: var(--space-5) var(--space-6);
+            color: var(--color-text-primary);
+            font-size: var(--font-size-sm);
+            transition: all var(--motion-fast) cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .form-control:focus,
+        .form-control:focus-visible {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Batch Upload Grid */
+        .upload-container {
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone {
+            height: 180px;
+            background: rgba(11, 15, 26, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--motion-fast) cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 
+                inset 0 0 30px rgba(0, 0, 0, 0.8),
+                0 4px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Technical Corner Target Brackets */
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 12px; left: 12px;
+            width: 14px; height: 14px;
+            border-top: 2.5px solid var(--primary);
+            border-left: 2.5px solid var(--primary);
+            transition: all var(--motion-fast) ease;
+        }
+        .drop-zone::after {
+            content: '';
+            position: absolute;
+            bottom: 12px; right: 12px;
+            width: 14px; height: 14px;
+            border-bottom: 2.5px solid var(--primary);
+            border-right: 2.5px solid var(--primary);
+            transition: all var(--motion-fast) ease;
+        }
+
+        .drop-zone:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            background: rgba(11, 15, 26, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 15px 30px -10px rgba(99, 102, 241, 0.15),
+                inset 0 0 25px rgba(99, 102, 241, 0.05);
+        }
+        .drop-zone:hover::before {
+            top: 8px; left: 8px;
+            border-color: #38bdf8;
+        }
+        .drop-zone:hover::after {
+            bottom: 8px; right: 8px;
+            border-color: #38bdf8;
+        }
+
+        /* AI Scan Laser Sweep */
+        @keyframes scan-sweep {
+            0% { top: 0%; opacity: 0.1; }
+            5% { opacity: 0.85; }
+            95% { opacity: 0.85; }
+            100% { top: 100%; opacity: 0.1; }
+        }
+        .scan-laser {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #38bdf8, #818cf8, #38bdf8, transparent);
+            box-shadow: 0 0 10px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.5);
+            animation: scan-sweep 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 8;
+            pointer-events: none;
+        }
+
+        .drop-zone svg { width: 44px; height: 44px; color: var(--primary); margin-bottom: 0.8rem; opacity: 0.8; }
+        .drop-zone p { font-size: 0.95rem; color: var(--text-secondary); font-weight: 500; }
+        .drop-zone span { font-size: 0.8rem; color: rgba(148, 163, 184, 0.6); margin-top: 0.4rem; }
+
+        /* Upload Queue List */
+        .queue-list {
+            margin-top: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .queue-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: var(--space-4) var(--space-6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-6);
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .queue-item-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            flex: 1;
+        }
+
+        .queue-item-thumbnail {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-xs);
+            background: #000;
+            object-fit: cover;
+            border: 1px solid var(--border);
+        }
+
+        .queue-item-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .queue-item-name {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--color-text-primary);
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-item-size {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+        }
+
+        .queue-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+        }
+
+        .organ-selector {
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--color-text-primary);
+            border: 1px solid var(--border);
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-xs);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all var(--motion-fast) ease;
+        }
+
+        .organ-selector:focus,
+        .organ-selector:focus-visible { 
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--high);
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all var(--motion-fast) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-remove:hover { opacity: 1; transform: scale(1.1); }
+        .btn-remove svg { width: 20px; height: 20px; }
+
+        /* Buttons & Loader */
+        .btn-process {
+            width: 100%;
+            max-width: 450px;
+            margin: var(--space-8) auto 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: var(--space-5) var(--space-8);
+            font-size: var(--font-size-md);
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--motion-fast) ease;
+            box-shadow: 0 10px 25px -5px var(--primary-glow);
+            outline: none;
+        }
+
+        .btn-process:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-process:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 15px 30px -5px var(--primary-glow); }
+        .btn-process:focus-visible { box-shadow: 0 0 0 4px var(--primary-glow); }
+
+        .loader-wrapper {
+            display: none;
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .loader {
+            width: 54px;
+            height: 54px;
+            border: 4px solid rgba(255,255,255,0.06);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            margin: 0 auto 1rem auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loader-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* Diagnostic Results Board */
+        .results-section {
+            display: none;
+            margin-top: 3.5rem;
+        }
+
+        .results-header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #a855f7, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 2.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .result-card {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+
+        /* 4-Panel PACS Viewer Grid */
+        .viewer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 256px);
+            grid-template-rows: repeat(2, auto);
+            gap: 1.2rem;
+            justify-content: center;
+        }
+        @media (max-width: 640px) {
+            .viewer-grid {
+                grid-template-columns: 256px;
+            }
+        }
+
+        .viewer-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .image-frame {
+            position: relative;
+            width: 256px;
+            height: 256px;
+            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #000;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .viewer-img {
+            width: 256px;
+            height: 256px;
+            object-fit: contain;
+            pointer-events: none;
+            display: block;
+        }
+
+        .viewer-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .diff-map-styled {
+            filter: hue-rotate(280deg) saturate(2.5);
+        }
+
+        /* Metrics & Diagnostic Analysis Panel */
+        .analysis-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .scan-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .scan-meta h3 { font-size: 1.3rem; font-weight: 700; color: #fff; }
+        .scan-meta span { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+
+        .severity-badge {
+            padding: 0.5rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .badge-normal { background: var(--normal-glow); color: var(--normal); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-mild { background: var(--mild-glow); color: var(--mild); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-high { background: var(--high-glow); color: var(--high); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 500px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+        .metric-mini-card {
+            background: rgba(11, 15, 26, 0.55);
+            border: 1px solid var(--border);
+            border-bottom: 2.5px solid var(--primary);
+            border-radius: 14px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: inset 0 0 12px rgba(99, 102, 241, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .metric-mini-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99, 102, 241, 0.35);
+            border-bottom-color: var(--secondary);
+            box-shadow: 
+                0 10px 20px -10px rgba(99, 102, 241, 0.2),
+                inset 0 0 15px rgba(99, 102, 241, 0.1);
+        }
+
+        .metric-mini-val { font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 0.2rem; font-family: monospace; letter-spacing: -0.5px; }
+        .metric-mini-label { font-size: 0.7rem; font-weight: 600; color: #818cf8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .diagnostic-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .diagnostic-card.border-high { border-left-color: var(--high); }
+        .diagnostic-card.border-mild { border-left-color: var(--mild); }
+        .diagnostic-card.border-normal { border-left-color: var(--normal); }
+
+        .diag-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px; }
+        .diag-text { font-size: 0.95rem; line-height: 1.5; color: #fff; margin-bottom: 1rem; }
+
+        .bullet-list {
+            margin-left: 1.2rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        /* Dynamic Diff Map Frame */
+        .diff-map-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 1rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .diff-map-img {
+            width: 80px;
+            height: 80px;
+            background: #000;
+            border-radius: 8px;
+            object-fit: contain;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            filter: hue-rotate(280deg) saturate(2.5);
+        }
+
+        .diff-map-text h4 { font-size: 0.9rem; font-weight: 700; color: #ef4444; margin-bottom: 0.2rem; }
+        .diff-map-text p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+
+        /* Doctor Review Validation Board */
+        .validation-board {
+            display: none;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 2.5rem;
+            margin-top: 1rem;
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
+        }
+
+        .validation-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) { .validation-grid { grid-template-columns: 1fr; } }
+
+        .doctor-notes-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .doctor-notes-textarea {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.2rem;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 140px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .doctor-notes-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .signature-box {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .signature-line {
+            width: 80%;
+            height: 1px;
+            background: var(--text-secondary);
+            margin-top: 2rem;
+            opacity: 0.4;
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.4);
+            margin-top: 1rem;
+            align-self: flex-start;
+        }
+
+        .btn-print:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -6px rgba(16, 185, 129, 0.5); }
+
+        /* Printable clinical layout overrides */
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+                min-height: auto !important;
+                height: auto !important;
+            }
+            body::before, .bg-glow-1, .bg-glow-2, .bg-glow-3 {
+                display: none !important;
+                content: none !important;
+            }
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            header, .main-card, .btn-print, .btn-process, .btn-remove, .drop-zone, .queue-list, .results-header, .slider-handle-btn, .view-toggle {
+                display: none !important;
+            }
+            .results-section, .validation-board {
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            /* Custom Printable Letterhead */
+            .print-letterhead {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 3px double #000;
+                padding-bottom: 1.5rem;
+                margin-bottom: 2rem;
+            }
+            .print-letterhead-title h2 { font-size: 1.8rem; font-weight: 800; color: #000; margin-bottom: 0.2rem; }
+            .print-letterhead-title p { font-size: 0.85rem; color: #334155; }
+            .print-meta-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 2.5rem;
+            }
+            .print-meta-table td {
+                border: 1px solid #cbd5e1;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+            .print-meta-table td.label {
+                font-weight: 700;
+                background: #f1f5f9;
+                width: 20%;
+            }
+
+            .result-card {
+                grid-template-columns: auto 1fr !important;
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0 !important;
+                background: #fff !important;
+                color: #000 !important;
+                padding: 1.5rem !important;
+                margin-bottom: 2.5rem !important;
+                page-break-inside: avoid;
+            }
+            .slider-container {
+                border: 1px solid #94a3b8 !important;
+                box-shadow: none !important;
+            }
+            .denoised-wrapper {
+                width: 100% !important; /* Always show fully denoised image in print */
+                border-right: none !important;
+            }
+            .scan-meta h3, .metric-mini-val, .diag-text {
+                color: #000 !important;
+            }
+            .metric-mini-card {
+                border: 1px solid #cbd5e1 !important;
+                background: #f8fafc !important;
+            }
+            .diagnostic-card {
+                border: 1px solid #cbd5e1 !important;
+                border-left: 5px solid #000 !important;
+                background: #f8fafc !important;
+            }
+            .bullet-list { color: #334155 !important; }
+            .diff-map-wrapper {
+                border: 1px solid #cbd5e1 !important;
+                background: #f8fafc !important;
+            }
+            .diff-map-text h4 { color: #b91c1c !important; }
+            .diff-map-text p { color: #475569 !important; }
+            
+            .validation-board {
+                margin-top: 3rem !important;
+                page-break-inside: avoid;
+            }
+            .validation-grid {
+                grid-template-columns: 1fr 250px !important;
+            }
+            .doctor-notes-textarea {
+                border: 1px solid #cbd5e1 !important;
+                background: #fff !important;
+                color: #000 !important;
+                min-height: 180px !important;
+            }
+            .signature-box {
+                border: 1px solid #cbd5e1 !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .neon-bbox-border {
+                border: 2px solid #000 !important;
+                box-shadow: none !important;
+                animation: none !important;
+            }
+            .neon-bbox-label {
+                background: #000 !important;
+                color: #fff !important;
+                animation: none !important;
+                box-shadow: none !important;
+            }
+            .dicom-metadata-panel {
+                border: 1px solid #cbd5e1 !important;
+                background: #f8fafc !important;
+                color: #000 !important;
+                margin-top: 1rem !important;
+            }
+            .restoration-matrix-wrapper {
+                border: 1px solid #cbd5e1 !important;
+                background: #f8fafc !important;
+                color: #000 !important;
+                margin-top: 1rem !important;
+                padding: 1rem !important;
+                page-break-inside: avoid;
+            }
+            .restoration-matrix-wrapper table {
+                color: #000 !important;
+            }
+            .restoration-matrix-wrapper th {
+                color: #475569 !important;
+                border-bottom: 1px solid #cbd5e1 !important;
+            }
+            .restoration-matrix-wrapper td {
+                color: #000 !important;
+                border-bottom: 1px solid #cbd5e1 !important;
+            }
+            .dicom-metadata-title {
+                color: #000 !important;
+            }
+            .dicom-metadata-grid div {
+                color: #334155 !important;
+            }
+            .dicom-metadata-grid span {
+                color: #000 !important;
+            }
+            
+            /* Print Views PACS Layout rules */
+            .viewer-grid {
+                grid-template-columns: repeat(2, 220px) !important;
+                gap: 1rem !important;
+                justify-content: flex-start !important;
+                page-break-inside: avoid;
+            }
+            .viewer-panel {
+                width: 220px !important;
+            }
+            .image-frame, .viewer-img {
+                width: 220px !important;
+                height: 220px !important;
+            }
+            .viewer-label {
+                font-size: 0.65rem !important;
+                color: #000 !important;
+            }
+        }
+
+        .print-letterhead { display: none; }
+
+        /* Neon Glowing Bounding Box Styles */
+        .neon-bbox {
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        .neon-bbox-border {
+            position: absolute;
+            inset: 0;
+            border: 2px solid #ef4444;
+            border-radius: 4px;
+            box-shadow: 0 0 8px #ef4444, inset 0 0 8px #ef4444;
+            animation: neon-blink 1.5s ease-in-out infinite alternate;
+        }
+        .neon-bbox-label {
+            position: absolute;
+            top: -18px;
+            left: 0;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+            animation: neon-blink 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes neon-blink {
+            0% { opacity: 0.4; box-shadow: 0 0 4px #ef4444, inset 0 0 4px #ef4444; }
+            100% { opacity: 1; box-shadow: 0 0 12px #ef4444, inset 0 0 12px #ef4444; }
+        }
+
+        /* Pulse Input Highlight Animation */
+        @keyframes input-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .pulse-highlight {
+            animation: input-pulse 1.5s ease-out 2;
+        }
+
+        /* DICOM Demographics Card Styles */
+        .dicom-metadata-panel {
+            background: rgba(99, 102, 241, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 14px;
+            padding: 1rem 1.2rem;
+            margin-top: 1rem;
+        }
+        .dicom-metadata-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #818cf8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.6rem;
+        }
+        .dicom-metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .dicom-metadata-grid span {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Interactive View-Toggle Styling */
+        .toggle-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.active {
+            background: var(--primary) !important;
+            color: #fff !important;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+        .toggle-btn:hover:not(.active) {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Ambient Technical Glow Orbs -->
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+    <div class="bg-glow-3"></div>
+
+    <!-- Print Only Letterhead Header -->
+    <div class="container print-letterhead" id="p-letterhead">
+        <div class="print-letterhead-title">
+            <h2>CLINICAL RESTORATION & DIAGNOSTIC REPORT</h2>
+            <p>Powered by Medical CT Denoise AI Engine (U-Net Symmetric Autoencoder)</p>
+        </div>
+        <div style="text-align: right; font-size: 0.8rem; color: #475569;">
+            <p><strong>Facility:</strong> Advanced AI Radiotherapy Unit</p>
+            <p><strong>System Date:</strong> <span id="print-date">--</span></p>
+        </div>
+    </div>
+
+    <!-- Printable Meta Details -->
+    <table class="print-letterhead print-meta-table" id="p-meta">
+        <tr>
+            <td class="label">Patient Name</td>
+            <td id="p-print-name">--</td>
+            <td class="label">Patient ID</td>
+            <td id="p-print-id">--</td>
+        </tr>
+        <tr>
+            <td class="label">Admission Date</td>
+            <td id="p-print-date">--</td>
+            <td class="label">Referrer</td>
+            <td id="p-print-doc">--</td>
+        </tr>
+        <tr>
+            <td class="label">Patient Status</td>
+            <td id="p-print-triage" style="font-weight: 800; text-transform: uppercase;">--</td>
+            <td class="label">Total Slices</td>
+            <td id="p-print-slices">--</td>
+        </tr>
+    </table>
+
+    <div class="container">
+        <header>
+            <div class="system-status-pill">
+                <div class="system-status-dot"></div>
+                LIVE CASCADE PIPELINE
+            </div>
+            <h1>Medical CT Denoise AI</h1>
+            <p class="subtitle">Multi-Organ Reconstruction & Diagnostic Scanning Portal</p>
+        </header>
+
+        <main class="main-card">
+            <!-- 1. Patient Admission Form -->
+            <div class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Patient Admission Details
+            </div>
+            
+            <div class="patient-info-grid">
+                <div class="form-group">
+                    <label for="pt-name">Patient Name</label>
+                    <input type="text" id="pt-name" class="form-control" placeholder="Enter Full Name" value="Jane Doe">
+                </div>
+                <div class="form-group">
+                    <label for="pt-id">Patient ID / Case Ref</label>
+                    <input type="text" id="pt-id" class="form-control" placeholder="Generating Accession ID..." readonly>
+                </div>
+                <div class="form-group">
+                    <label for="pt-doc">Diagnosing Physician</label>
+                    <input type="text" id="pt-doc" class="form-control" placeholder="Doctor's Name" value="Dr. Vivek, M.D.">
+                </div>
+            </div>
+
+            <!-- 2. Multi-Organ Batch Uploader -->
+            <div class="section-title" style="color: #818cf8;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                Batch Upload Scan Series
+            </div>
+
+            <div class="upload-container">
+                <div class="drop-zone" id="dz-batch">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <p>Drag & drop multiple clinical CT scans (.png, .jpg, .dcm)</p>
+                    <span>Click to browse from local computer</span>
+                    <input type="file" id="in-batch" hidden multiple accept="image/*,.dcm">
+                </div>
+
+                <!-- Queue List -->
+                <div class="queue-list" id="q-list">
+                    <!-- Dynamic Upload Items -->
+                </div>
+            </div>
+
+            <!-- 3. Process Button -->
+            <button class="btn-process" id="btn-run" disabled>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Initiate AI Denoise & Diagnostic Analysis
+            </button>
+
+            <!-- 4. Loading Frame -->
+            <div class="loader-wrapper" id="loader-frame">
+                <div class="loader"></div>
+                <div class="loader-text" id="loader-msg">Processing clinical scan slices...</div>
+            </div>
+        </main>
+
+        <!-- 5. Diagnostic Results Board -->
+        <section class="results-section" id="res-section">
+            <div class="results-header">
+                <h2 class="results-title">AI Clinical Diagnostic Dashboard</h2>
+                <div class="severity-badge badge-normal" id="patient-triage-badge" style="font-weight: 700; text-transform: uppercase;"><span>●</span> Patient Status: Normal</div>
+            </div>
+
+            <!-- Dynamic Scan Report Cards will render here -->
+            <div id="cards-container"></div>
+        </section>
+
+        <!-- 6. Doctor Validation Board -->
+        <div class="validation-board" id="val-board">
+            <div class="section-title" style="color: #10b981; margin-bottom: 1.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Radiological Validation & Doctor Sign-Off
+            </div>
+            
+            <div class="validation-grid">
+                <div class="doctor-notes-area">
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Doctor's Observations & Clinical Remarks</label>
+                    <textarea class="doctor-notes-textarea" id="doc-notes">I have reviewed the AI-reconstructed clean scans alongside the computed PSNR metrics and isolated difference maps. The spatial resolution of the fine structural details in all organs remains intact without artificial artifacts. 
+
+Clinical Impression: Findings conform to the diagnostic details outlined above. Ready for clinical storage/archival.</textarea>
+                    
+                    <button class="btn-print" id="btn-print-report">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Print Official Clinical PDF Chart
+                    </button>
+                </div>
+
+                <div class="signature-box">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Diagnosing Physician</span>
+                    <span id="doc-sig-name" style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: 1rem;">Dr. Vivek, M.D.</span>
+                    <div class="signature-line"></div>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary); opacity: 0.6;">Authorized Digital Signature</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dzBatch = document.getElementById('dz-batch');
+        const inBatch = document.getElementById('in-batch');
+        const qList = document.getElementById('q-list');
+        const btnRun = document.getElementById('btn-run');
+        const loaderFrame = document.getElementById('loader-frame');
+        const resSection = document.getElementById('res-section');
+        const cardsContainer = document.getElementById('cards-container');
+        const valBoard = document.getElementById('val-board');
+        const btnPrint = document.getElementById('btn-print-report');
+
+        // Auto-generate Patient Accession ID on load
+        document.getElementById('pt-id').value = "ACC-" + Math.floor(100000 + Math.random() * 900000);
+
+        let queueFiles = [];
+
+        dzBatch.onclick = () => inBatch.click();
+
+        inBatch.onchange = (e) => {
+            handleFiles(e.target.files);
+        };
+
+        // Drag and drop handlers
+        dzBatch.ondragover = (e) => { e.preventDefault(); dzBatch.style.borderColor = 'var(--primary)'; };
+        dzBatch.ondragleave = () => { dzBatch.style.borderColor = 'rgba(99, 102, 241, 0.25)'; };
+        dzBatch.ondrop = (e) => {
+            e.preventDefault();
+            dzBatch.style.borderColor = 'rgba(99, 102, 241, 0.25)';
+            handleFiles(e.dataTransfer.files);
+        };
+
+        function handleFiles(files) {
+            for (let file of files) {
+                // Ensure unique name in queue
+                if (!queueFiles.some(f => f.name === file.name)) {
+                    queueFiles.push(file);
+                    renderQueueItem(file);
+                }
+            }
+            btnRun.disabled = queueFiles.length === 0;
+        }
+
+        function renderQueueItem(file) {
+            const item = document.createElement('div');
+            item.className = 'queue-item';
+            const safeName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
+            item.id = `q-item-${safeName}`;
+
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            
+            // Build organ choices based on filename hints
+            let defaultOrgan = "chest";
+            if (file.name.toLowerCase().includes("brain") || file.name.toLowerCase().includes("head")) {
+                defaultOrgan = "brain";
+            } else if (file.name.toLowerCase().includes("abdomen") || file.name.toLowerCase().includes("liver") || file.name.toLowerCase().includes("kidney")) {
+                defaultOrgan = "abdomen";
+            }
+
+            item.innerHTML = `
+                <div class="queue-item-info" style="gap: 1.5rem; flex-wrap: wrap;">
+                    <!-- Noisy Scan Slot -->
+                    <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        <img class="queue-item-thumbnail noisy-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text x='50' y='55' fill='%236366f1' font-size='12' font-family='sans-serif' text-anchor='middle'>LOADING</text></svg>">
+                        <div class="queue-item-details">
+                            <span style="font-size: 0.7rem; color: #ef4444; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Noisy Input Scan</span>
+                            <span class="queue-item-name" style="max-width: 150px;">${file.name}</span>
+                            <span class="queue-item-size">${sizeMB} MB</span>
+                        </div>
+                    </div>
+                    
+                    <span style="color: rgba(255,255,255,0.15); font-weight: 700; font-size: 1.2rem; align-self: center;">+</span>
+
+                    <!-- Clean Reference Scan Slot -->
+                    <div style="display: flex; align-items: center; gap: 0.8rem; min-width: 250px;">
+                        <input type="file" class="clean-input" hidden accept="image/*">
+                        <img class="queue-item-thumbnail clean-thumb" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111827' stroke='rgba(255,255,255,0.05)' stroke-width='1'/><text x='50' y='55' fill='rgba(255,255,255,0.15)' font-size='10' font-family='sans-serif' text-anchor='middle'>NO CLEAR SCAN</text></svg>">
+                        <div class="queue-item-details clean-details">
+                            <span style="font-size: 0.7rem; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Clean Reference Scan</span>
+                            <button class="organ-selector clean-attach-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); color: #10b981; margin-top: 0.2rem;">Attach Clear Scan</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="queue-controls">
+                    <select class="organ-selector">
+                        <option value="chest" ${defaultOrgan === 'chest' ? 'selected' : ''}>Chest / Lung CT</option>
+                        <option value="brain" ${defaultOrgan === 'brain' ? 'selected' : ''}>Brain CT</option>
+                        <option value="abdomen" ${defaultOrgan === 'abdomen' ? 'selected' : ''}>Abdomen CT</option>
+                    </select>
+                    <button class="btn-remove">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            `;
+
+            // Thumbnail renderer
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const thumb = item.querySelector('.noisy-thumb');
+                if (thumb) {
+                    if (file.name.toLowerCase().endsWith('.dcm')) {
+                        // Placeholder for DICOM raw file representation
+                        thumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111827' stroke='%236366f1' stroke-width='2'/><text x='50' y='55' fill='%236366f1' font-size='12' font-family='sans-serif' text-anchor='middle' font-weight='bold'>DICOM</text></svg>";
+                    } else {
+                        thumb.src = e.target.result;
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+
+            // File attachment logic for clean scan reference
+            const cleanInput = item.querySelector('.clean-input');
+            const cleanAttachBtn = item.querySelector('.clean-attach-btn');
+            const cleanThumb = item.querySelector('.clean-thumb');
+            const cleanDetail = item.querySelector('.clean-details');
+            
+            // Store clean file reference in the file object properties
+            file.cleanFile = null;
+
+            if (cleanAttachBtn) {
+                cleanAttachBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    cleanInput.click();
+                };
+            }
+
+            if (cleanInput) {
+                cleanInput.onchange = (e) => {
+                    const cleanFile = e.target.files[0];
+                    if (cleanFile) {
+                        file.cleanFile = cleanFile;
+                        
+                        const cleanReader = new FileReader();
+                        cleanReader.onload = (ev) => {
+                            if (cleanThumb) {
+                                cleanThumb.src = ev.target.result;
+                            }
+                        };
+                        cleanReader.readAsDataURL(cleanFile);
+                        
+                        const cleanSizeMB = (cleanFile.size / (1024 * 1024)).toFixed(2);
+                        cleanDetail.innerHTML = `
+                            <span style="font-size: 0.7rem; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Clean Reference Scan</span>
+                            <span class="queue-item-name" style="max-width: 150px;">${cleanFile.name}</span>
+                            <div style="display: flex; gap: 0.4rem; align-items: center; margin-top: 0.1rem;">
+                                <span style="font-size: 0.65rem; color: var(--text-secondary);">${cleanSizeMB} MB</span>
+                                <button class="clean-remove-btn" style="background: none; border: none; padding: 0; color: #ef4444; font-size: 0.7rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Detach</button>
+                            </div>
+                        `;
+                        
+                        const removeBtn = cleanDetail.querySelector('.clean-remove-btn');
+                        if (removeBtn) {
+                            removeBtn.onclick = (ev) => {
+                                ev.stopPropagation();
+                                file.cleanFile = null;
+                                cleanInput.value = '';
+                                if (cleanThumb) {
+                                    cleanThumb.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111827' stroke='rgba(255,255,255,0.05)' stroke-width='1'/><text x='50' y='55' fill='rgba(255,255,255,0.15)' font-size='10' font-family='sans-serif' text-anchor='middle'>NO CLEAR SCAN</text></svg>";
+                                }
+                                cleanDetail.innerHTML = `
+                                    <span style="font-size: 0.7rem; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Clean Reference Scan</span>
+                                    <button class="organ-selector clean-attach-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); color: #10b981; margin-top: 0.2rem;">Attach Clear Scan</button>
+                                `;
+                                const attachBtn2 = cleanDetail.querySelector('.clean-attach-btn');
+                                if (attachBtn2) {
+                                    attachBtn2.onclick = (ev2) => {
+                                        ev2.stopPropagation();
+                                        cleanInput.click();
+                                    };
+                                }
+                            };
+                        }
+                    }
+                };
+            }
+
+            // Remove button logic
+            item.querySelector('.btn-remove').onclick = () => {
+                queueFiles = queueFiles.filter(f => f.name !== file.name);
+                item.remove();
+                btnRun.disabled = queueFiles.length === 0;
+            };
+
+            qList.appendChild(item);
+        }
+
+        btnRun.onclick = async () => {
+            if (queueFiles.length === 0) return;
+
+            btnRun.disabled = true;
+            loaderFrame.style.display = 'block';
+            resSection.style.display = 'none';
+            valBoard.style.display = 'none';
+            cardsContainer.innerHTML = '';
+
+            const formData = new FormData();
+            
+            // Gather files and selected organ tags
+            queueFiles.forEach((file, index) => {
+                formData.append('images', file);
+                
+                // Append clean file reference if user uploaded one
+                if (file.cleanFile) {
+                    formData.append('clean_images', file.cleanFile);
+                    formData.append('has_clean', 'true');
+                } else {
+                    formData.append('clean_images', new Blob()); // empty blob placeholder to maintain alignment
+                    formData.append('has_clean', 'false');
+                }
+                
+                // Get corresponding dropdown value
+                const safeName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
+                const itemRow = document.getElementById(`q-item-${safeName}`);
+                const select = itemRow.querySelector('.organ-selector');
+                formData.append('organs', select.value);
+            });
+
+            document.getElementById('loader-msg').textContent = "Processing and reconstructing clinical CT scan slices...";
+
+            try {
+                const res = await fetch('/process', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    renderResultCards(data.results);
+                }
+            } catch (err) {
+                alert('Server processing connection error. Please ensure the Flask app is active.');
+            } finally {
+                loaderFrame.style.display = 'none';
+                btnRun.disabled = false;
+            }
+        };
+
+        function renderResultCards(results) {
+            // Calculate overall patient triage severity
+            let overallSeverity = "Normal";
+            const severities = results.map(r => r.diagnosis.severity); // "High Risk", "Mild Anomaly", "Normal"
+            
+            if (severities.includes("High Risk")) {
+                overallSeverity = "High Risk";
+            } else if (severities.includes("Mild Anomaly")) {
+                overallSeverity = "Mild Anomaly";
+            }
+            
+            // Update Triage Badge on Dashboard Header
+            const triageBadge = document.getElementById('patient-triage-badge');
+            if (triageBadge) {
+                triageBadge.className = `severity-badge ${overallSeverity === 'High Risk' ? 'badge-high' : (overallSeverity === 'Mild Anomaly' ? 'badge-mild' : 'badge-normal')}`;
+                triageBadge.innerHTML = `<span>●</span> Patient Status: ${overallSeverity}`;
+            }
+
+            // Update Printable elements
+            const printTriage = document.getElementById('p-print-triage');
+            if (printTriage) {
+                printTriage.textContent = overallSeverity;
+                printTriage.style.color = overallSeverity === 'High Risk' ? '#ef4444' : (overallSeverity === 'Mild Anomaly' ? '#f59e0b' : '#10b981');
+            }
+            const printSlices = document.getElementById('p-print-slices');
+            if (printSlices) {
+                printSlices.textContent = results.length;
+            }
+
+            results.forEach((res, index) => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                const badgeClass = res.diagnosis.severity === 'High Risk' ? 'badge-high' : 
+                                  (res.diagnosis.severity === 'Mild Anomaly' ? 'badge-mild' : 'badge-normal');
+                
+                const borderClass = res.diagnosis.severity === 'High Risk' ? 'border-high' : 
+                                   (res.diagnosis.severity === 'Mild Anomaly' ? 'border-mild' : 'border-normal');
+
+                const findingsList = res.diagnosis.findings.map(f => `<li>${f}</li>`).join('');
+                const recsList = res.diagnosis.recommendations.map(r => `<li>${r}</li>`).join('');
+
+                // Parse Bounding Box dimensions (Option 1)
+                const bbox = res.diagnosis.bbox || [0.4, 0.4, 0.6, 0.6];
+                const ymin = bbox[0];
+                const xmin = bbox[1];
+                const ymax = bbox[2];
+                const xmax = bbox[3];
+
+                const bboxTop = (ymin * 100).toFixed(2) + '%';
+                const bboxLeft = (xmin * 100).toFixed(2) + '%';
+                const bboxWidth = ((xmax - xmin) * 100).toFixed(2) + '%';
+                const bboxHeight = ((ymax - ymin) * 100).toFixed(2) + '%';
+
+                // DICOM Panel (Option 2)
+                let dicomPanelHtml = '';
+                if (res.dicom_metadata) {
+                    dicomPanelHtml = `
+                        <div class="dicom-metadata-panel">
+                            <div class="dicom-metadata-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                Embedded DICOM Header Demographics
+                            </div>
+                            <div class="dicom-metadata-grid">
+                                <div><span>Patient Sex:</span> ${res.dicom_metadata.sex}</div>
+                                <div><span>Patient Age:</span> ${res.dicom_metadata.age}</div>
+                                <div><span>Study Date:</span> ${res.dicom_metadata.date}</div>
+                                <div><span>Hardware:</span> ${res.dicom_metadata.manufacturer} (${res.dicom_metadata.modality})</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="viewer-grid">
+                        <!-- Panel 1: Noisy Input -->
+                        <div class="viewer-panel">
+                            <div class="image-frame">
+                                <div class="scan-laser"></div>
+                                <img class="viewer-img" src="data:image/png;base64,${res.noisy}">
+                            </div>
+                            <div class="viewer-label">Noisy Input Scan (QD)</div>
+                        </div>
+                        
+                        <!-- Panel 2: AI Restored Scan -->
+                        <div class="viewer-panel">
+                            <div class="image-frame">
+                                <div class="scan-laser"></div>
+                                <img class="viewer-img" src="data:image/png;base64,${res.denoised}">
+                            </div>
+                            <div class="viewer-label">AI Restored (FD)</div>
+                        </div>
+
+                        <!-- Panel 3: GradCAM XAI Map -->
+                        <div class="viewer-panel">
+                            <div class="image-frame">
+                                <div class="scan-laser"></div>
+                                <img class="viewer-img" src="${res.gradcam_overlay}">
+                            </div>
+                            <div class="viewer-label">GradCAM Attention Map</div>
+                        </div>
+
+                        <!-- Panel 4: Isolated Artifact Difference Map -->
+                        <div class="viewer-panel">
+                            <div class="image-frame" style="border-color: rgba(239, 68, 68, 0.3);">
+                                <div class="scan-laser"></div>
+                                <img class="viewer-img diff-map-styled" src="data:image/png;base64,${res.diff}">
+                            </div>
+                            <div class="viewer-label">Isolated Difference Map</div>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-column">
+                        <div class="analysis-header">
+                            <div class="scan-meta">
+                                <h3>${res.organ} Scan Series</h3>
+                                <span>Slice Source: ${res.name}</span>
+                            </div>
+                            <div class="severity-badge ${badgeClass}">
+                                <span>●</span> ${res.diagnosis.severity}
+                            </div>
+                        </div>
+
+
+
+                        <div class="metrics-grid">
+                            <div class="metric-mini-card">
+                                <div class="metric-mini-val">${res.metrics.psnr_restored.toFixed(2)} dB</div>
+                                <div style="font-size: 0.75rem; color: var(--normal); font-weight: 700; margin-bottom: 0.2rem;">+${res.metrics.psnr_delta.toFixed(2)} dB Delta</div>
+                                <div class="metric-mini-label">PSNR (Noisy: ${res.metrics.psnr_noisy.toFixed(1)} dB)</div>
+                            </div>
+                            <div class="metric-mini-card">
+                                <div class="metric-mini-val">${res.metrics.ssim_restored.toFixed(3)}</div>
+                                <div style="font-size: 0.75rem; color: var(--normal); font-weight: 700; margin-bottom: 0.2rem;">+${res.metrics.ssim_delta.toFixed(3)} Delta</div>
+                                <div class="metric-mini-label">SSIM (Noisy: ${res.metrics.ssim_noisy.toFixed(2)})</div>
+                            </div>
+                            <div class="metric-mini-card">
+                                <div class="metric-mini-val" style="color: var(--normal);">${res.metrics.improvement.toFixed(1)}%</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; margin-bottom: 0.2rem;">Signal Gain</div>
+                                <div class="metric-mini-label">Net Improvement</div>
+                            </div>
+                        </div>
+
+                        <!-- Scientific Restoration Metrics Matrix -->
+                        <div class="restoration-matrix-wrapper" style="margin-top: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem;">
+                            <div class="diag-title" style="margin-bottom: 0.8rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">CT Image Restoration Quality Matrix</div>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--border); color: var(--color-text-secondary);">
+                                            <th style="padding: 0.5rem 0;">Image Quality Parameter</th>
+                                            <th style="padding: 0.5rem; text-align: center;">Noisy Input (Baseline)</th>
+                                            <th style="padding: 0.5rem; text-align: center;">AI Restored (Denoised)</th>
+                                            <th style="padding: 0.5rem; text-align: center; color: var(--normal);">Absolute Gain (Δ)</th>
+                                            <th style="padding: 0.5rem; text-align: right; color: var(--primary);">Relative Improvement</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                            <td style="padding: 0.6rem 0; font-weight: 600;">Peak Signal-to-Noise Ratio (PSNR)</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--color-text-secondary);">${res.metrics.psnr_noisy.toFixed(2)} dB</td>
+                                            <td style="padding: 0.6rem; text-align: center; font-weight: 700;">${res.metrics.psnr_restored.toFixed(2)} dB</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--normal); font-weight: 700;">+${res.metrics.psnr_delta.toFixed(2)} dB</td>
+                                            <td style="padding: 0.6rem; text-align: right; color: var(--primary); font-weight: 700;">${res.metrics.improvement.toFixed(1)}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.6rem 0; font-weight: 600;">Structural Similarity Index (SSIM)</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--color-text-secondary);">${res.metrics.ssim_noisy.toFixed(3)}</td>
+                                            <td style="padding: 0.6rem; text-align: center; font-weight: 700;">${res.metrics.ssim_restored.toFixed(3)}</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--normal); font-weight: 700;">+${res.metrics.ssim_delta.toFixed(3)}</td>
+                                            <td style="padding: 0.6rem; text-align: right; color: var(--primary); font-weight: 700;">${((res.metrics.ssim_delta / Math.max(1e-5, res.metrics.ssim_noisy)) * 100).toFixed(1)}%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="diagnostic-card ${borderClass}">
+                            <div class="diag-title">AI Diagnostic Finding</div>
+                            <div class="diag-text">${res.diagnosis.diagnostic_text}</div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                                <div>
+                                    <div class="diag-title" style="font-size: 0.75rem; margin-bottom: 0.3rem;">Identified Pathology</div>
+                                    <ul class="bullet-list">${findingsList}</ul>
+                                </div>
+                                <div>
+                                    <div class="diag-title" style="font-size: 0.75rem; margin-bottom: 0.3rem;">Clinical Recommendations</div>
+                                    <ul class="bullet-list">${recsList}</ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Diff Map noise description -->
+                        <div class="diff-map-wrapper" style="border: 1px solid rgba(239, 68, 68, 0.15); background: rgba(239, 68, 68, 0.02); padding: 1rem; border-radius: 16px;">
+                            <div class="diff-map-text">
+                                <h4 style="color: #ef4444; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem;">Isolated Artifact Difference Analysis</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">The fourth PACS panel highlights exactly what noise, scatter radiation, and structural artifacts were digitally extracted, verifying anatomical structure preservation.</p>
+                            </div>
+                        </div>
+
+                        ${dicomPanelHtml}
+                    </div>
+                `;
+
+                cardsContainer.appendChild(card);
+            });
+
+            // Auto-populate admission info from DICOM metadata (Option 2)
+            const dicomRes = results.find(r => r.dicom_metadata);
+            if (dicomRes) {
+                const ptNameInput = document.getElementById('pt-name');
+                const ptIdInput = document.getElementById('pt-id');
+                
+                ptNameInput.value = dicomRes.dicom_metadata.name;
+                ptIdInput.value = dicomRes.dicom_metadata.id;
+                
+                // Trigger visual pulse animation to draw attention
+                ptNameInput.classList.add('pulse-highlight');
+                ptIdInput.classList.add('pulse-highlight');
+                
+                setTimeout(() => {
+                    ptNameInput.classList.remove('pulse-highlight');
+                    ptIdInput.classList.remove('pulse-highlight');
+                }, 3000);
+            }
+
+            // Set Doctor validation details and display board
+            document.getElementById('doc-sig-name').textContent = document.getElementById('pt-doc').value;
+            
+            resSection.style.display = 'block';
+            valBoard.style.display = 'block';
+            resSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        
+
+        // Print Diagnostic Report Page logic
+        btnPrint.onclick = () => {
+            // Populate printable letters and patient info
+            document.getElementById('print-date').textContent = new Date().toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById('p-print-name').textContent = document.getElementById('pt-name').value;
+            document.getElementById('p-print-id').textContent = document.getElementById('pt-id').value;
+            document.getElementById('p-print-date').textContent = new Date().toLocaleDateString();
+            document.getElementById('p-print-doc').textContent = document.getElementById('pt-doc').value;
+            document.getElementById('doc-sig-name').textContent = document.getElementById('pt-doc').value;
+
+            // Trigger browser print
+            window.print();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+numpy
+matplotlib
+tensorflow-cpu
+keras
+Flask
+Pillow
+gunicorn
