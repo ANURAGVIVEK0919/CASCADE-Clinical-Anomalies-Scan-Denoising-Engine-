@@ -1,5 +1,5 @@
 ---
-title: Medical CT Denoise & Diagnostic AI
+title: CASCADE - Clinical Anomalies & Scan Denoising Engine
 emoji: 🩺
 colorFrom: indigo
 colorTo: purple
@@ -8,14 +8,14 @@ app_file: app.py
 pinned: true
 ---
 
-# Medical CT Denoise & Diagnostic AI 🩺
+# CASCADE (Clinical Anomalies & Scan Denoising Engine) 🩺
 
 [![TensorFlow 2.10+](https://img.shields.io/badge/TensorFlow-2.10+-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://tensorflow.org)
 [![Flask](https://img.shields.io/badge/Flask-1.0+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-**Medical CT Denoise & Diagnostic AI** is a clinical-grade, multi-model deep learning platform designed for radiologists. It features a cascaded network: a **U-Net Convolutional Autoencoder** that restores high-fidelity scans from noisy, low-radiation (quarter-dose) inputs, and a **Multi-Task ResNet50V2** that localizes pathological regions, generates **Explainable AI (XAI)** attention overlays, and recommends clinical interventions.
+**CASCADE (Clinical Anomalies & Scan Denoising Engine)** is a clinical-grade, multi-model deep learning platform designed for radiologists. It features a cascaded network: a **U-Net Convolutional Autoencoder** that restores high-fidelity scans from noisy, low-radiation (quarter-dose) inputs, and a **Multi-Task ResNet50V2** that localizes pathological regions, generates **Explainable AI (XAI)** attention overlays, and recommends clinical interventions.
 
 This project directly addresses a major challenge in modern radiology: **minimizing patient radiation exposure while maintaining high diagnostic clarity and localizing critical anomalies.**
 
