@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASCADE - Ultimate Technical Interview & System Design Defense Manual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0B0F17;
+            --bg-card: #151C2C;
+            --bg-card-hover: #1E293B;
+            --bg-sidebar: #0F1420;
+            --accent-cyan: #00F2FE;
+            --accent-blue: #38BDF8;
+            --accent-green: #10B981;
+            --accent-purple: #A855F7;
+            --accent-red: #F43F5E;
+            --accent-amber: #F59E0B;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(0, 242, 254, 0.3);
+            --glow: 0 0 25px rgba(0, 242, 254, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            padding: 24px 16px;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-group {
+            margin-bottom: 20px;
+        }
+
+        .nav-group-title {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            padding-left: 10px;
+            font-weight: 700;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.84rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            margin-bottom: 3px;
+            border: 1px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border);
+        }
+
+        .nav-link.active {
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.08);
+            border-color: var(--border-highlight);
+        }
+
+        /* Main Content Layout */
+        .main-content {
+            margin-left: 320px;
+            flex: 1;
+            padding: 40px 48px;
+            max-width: 1350px;
+        }
+
+        /* Header Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(15, 20, 32, 0.95), rgba(21, 28, 44, 0.95)), radial-gradient(circle at top right, rgba(0, 242, 254, 0.18), transparent);
+            border: 1px solid var(--border-highlight);
+            border-radius: 16px;
+            padding: 36px;
+            margin-bottom: 40px;
+            box-shadow: var(--glow);
+        }
+
+        .hero-title {
+            font-size: 2.3rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-cyan { background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); border: 1px solid rgba(0, 242, 254, 0.3); }
+        .badge-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid rgba(168, 85, 247, 0.3); }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-red { background: rgba(244, 63, 94, 0.15); color: var(--accent-red); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+        /* Section Containers */
+        .section-container {
+            margin-bottom: 56px;
+            scroll-margin-top: 40px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-number {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: var(--bg-main);
+            font-weight: 800;
+            font-size: 0.9rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Card Layouts */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-subtitle {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Framework 5-Part Styling */
+        .framework-box {
+            background: rgba(15, 20, 32, 0.6);
+            border-left: 4px solid var(--accent-cyan);
+            border-radius: 0 10px 10px 0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .framework-title {
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        /* Hinglish Spoken Answer Block */
+        .spoken-answer {
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px dashed var(--accent-blue);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+            font-size: 0.95rem;
+            color: #E2E8F0;
+        }
+
+        .spoken-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Callouts */
+        .callout {
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        .callout-tip {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 4px solid var(--accent-green);
+            color: #D1FAE5;
+        }
+
+        .callout-warning {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--accent-amber);
+            color: #FEF3C7;
+        }
+
+        .callout-flag {
+            background: rgba(244, 63, 94, 0.08);
+            border-left: 4px solid var(--accent-red);
+            color: #FFE4E6;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background: #1E293B;
+            color: var(--accent-cyan);
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-primary);
+        }
+
+        /* Code Blocks */
+        pre {
+            background: #080C14;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.84rem;
+            color: #A5F3FC;
+            margin: 16px 0;
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--accent-cyan);
+        }
+
+        /* Diagrams */
+        .diagram-box {
+            background: #080C14;
+            border: 1px solid var(--border-highlight);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: #E2E8F0;
+            white-space: pre;
+            overflow-x: auto;
+            line-height: 1.45;
+            margin: 20px 0;
+        }
+
+        /* Counter Questions Q&A Layout */
+        .qa-item {
+            background: rgba(15, 20, 32, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .qa-q {
+            font-weight: 700;
+            color: var(--accent-red);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qa-a {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.55;
+            padding-left: 20px;
+            border-left: 3px solid rgba(244, 63, 94, 0.4);
+        }
+
+        /* Decision Block */
+        .decision-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .decision-cell {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .decision-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+        }
+
+        .decision-value {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            margin-top: 4px;
+        }
+
+        .math-box {
+            background: #0D1322;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-family: 'Fira Code', monospace;
+            color: #E9D5FF;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">🩺 CASCADE</div>
+            <div class="sidebar-subtitle">Master Defense Manual v2.0</div>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Strategy & Architecture</div>
+            <a href="#strategy" class="nav-link active">1. Lead Project Strategy</a>
+            <a href="#architecture-overview" class="nav-link">2. System Tensor Architecture</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Deep Learning Core</div>
+            <a href="#module-dl" class="nav-link">3. Cascaded U-Net & ResNet Models</a>
+            <a href="#math-loss" class="nav-link">4. Loss Functions & Multi-Task Math</a>
+            <a href="#dataset-kaggle" class="nav-link">5. Dataset & Kaggle Fine-Tuning</a>
+            <a href="#module-xai" class="nav-link">6. XAI & Grad-CAM Heatmap Engine</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Agents, RAG & Data Engine</div>
+            <a href="#module-langgraph" class="nav-link">7. LangGraph Multi-Agent (HITL)</a>
+            <a href="#module-pinecone" class="nav-link">8. Pinecone 384d Vector RAG</a>
+            <a href="#module-etl" class="nav-link">9. DICOM ETL & HIPAA Scrubbing</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Cloud & Production API</div>
+            <a href="#module-aws" class="nav-link">10. AWS S3/EC2/CloudWatch & WSGI</a>
+            <a href="#api-spec" class="nav-link">11. REST API & Telemetry Specs</a>
+            <a href="#module-frontend" class="nav-link">12. PACS Workstation UI Console</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Interview Master Defense</div>
+            <a href="#counter-questions" class="nav-link">13. 14 Master Counter Q&As</a>
+            <a href="#hospital-roadmap" class="nav-link">14. Hospital PACS Integration</a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- Hero Header -->
+        <div class="hero-banner">
+            <h1 class="hero-title">CASCADE: Master Technical Interview Defense Guide</h1>
+            <p style="color: var(--text-secondary); font-size: 1.05rem;">
+                An exhaustive, line-by-line technical defense manual for senior engineering & AI placement interviews. Derived 100% empirically from codebase scan of <strong>CASCADE (Clinical Anomalies & Scan Denoising Engine)</strong>.
+            </p>
+            <div class="hero-meta">
+                <span class="badge badge-cyan">100% Solo Ownership: Anurag Vivek</span>
+                <span class="badge badge-purple">Final Year AI & DS Campus Prep</span>
+                <span class="badge badge-green">Production Stack: TF 2.10+ / Flask / LangGraph / Pinecone / AWS</span>
+                <span class="badge badge-red">Strict Whiteboard & Verbal Defense Ready</span>
+            </div>
+        </div>
+
+        <!-- SECTION 1: LEAD PROJECT STRATEGY -->
+        <section id="strategy" class="section-container">
+            <div class="section-header">
+                <div class="section-number">01</div>
+                <h2 class="section-title">Which Project / Module to Lead With & Why</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">🎯 Interview Strategy Recommendation</div>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                    When the interviewer asks <em>"Walk me through your best technical project"</em>, lead directly with <strong>CASCADE</strong>. It proves full-stack AI engineering competence: custom computer vision neural networks, Explainable AI math, stateful LLM multi-agent graphs, dense vector retrieval, DICOM ETL, and AWS cloud infrastructure.
+                </p>
+
+                <div class="callout callout-tip">
+                    <strong>🎯 Interview Elevator Pitch (Hinglish Mode):</strong><br>
+                    "Sir, main CASCADE se lead karna chahunga. Ye ek clinical-grade multi-model AI platform hai jo Ultra-Low-Dose CT scans ko high-dose quality scans mein reconstruct karta hai aur live Explainable AI heatmaps ke saath anomalies flag karta hai. Isme maine na sirf custom U-Net aur Multi-Task ResNet-50V2 design kiya, balki ek stateful LangGraph Multi-Agent Medical Board, 384-dimensional Pinecone Vector RAG, aur AWS Cloud PACS Infrastructure architect kiya hai."
+                </div>
+
+                <h4 style="color: var(--text-primary); margin: 20px 0 10px 0;">Why Lead with CASCADE over basic wrapper projects?</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Evaluation Criterion</th>
+                            <th>Generic Wrapper / Basic ML Project</th>
+                            <th>CASCADE (Your Project)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Model Depth</strong></td>
+                            <td>Single API call or standard scikit-learn model</td>
+                            <td>Cascaded dual neural network (U-Net restoration + ResNet-50V2 multi-task classification & bounding box regression)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Explainability (XAI)</strong></td>
+                            <td>Black-box probability output</td>
+                            <td>Custom TensorFlow <code>tf.GradientTape</code> Grad-CAM heatmaps overlaid with OpenCV alpha blending</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Agentic Workflow</strong></td>
+                            <td>Single prompt LLM call</td>
+                            <td>Stateful 4-node <code>LangGraph</code> multi-agent workflow with Human-in-the-Loop (HITL) radiologist sign-off</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Domain Specificity</strong></td>
+                            <td>Standard PNG/JPG loading</td>
+                            <td>PyDicom ETL with Hounsfield Unit (HU) min-max normalization & HIPAA PII de-identification</td>
+                        </tr>
+                        <tr>
+                            <td><strong>System Reliability</strong></td>
+                            <td>Crashes if weights/keys missing</td>
+                            <td>Production fallback mechanisms: Local box-filter smoothing, TF-IDF dense cosine search, simulated AWS vault</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 2: SYSTEM ARCHITECTURE OVERVIEW & TENSOR SHAPES -->
+        <section id="architecture-overview" class="section-container">
+            <div class="section-header">
+                <div class="section-number">02</div>
+                <h2 class="section-title">End-to-End System Architecture & Tensor Flow</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">📐 Tensor Shape & Component Communication Flow</div>
+                <div class="diagram-box">
+ [ User Upload (DICOM / Image) ]
+         |
+         | HTTP POST /process (Multipart Form: images, organ_tags)
+         v
++---------------------------------------------------------------------------------------------------------+
+| LIVE FLASK APPLICATION SERVER (app.py) & GUNICORN (1 Worker, 4 Threads)                                 |
+|                                                                                                         |
+|  1. DICOM ETL Pre-Processor (pydicom / PIL)                                                             |
+|     Input DICOM Pixel Array -> Min-Max Scaling [HU -> (0.0, 1.0)] -> Resized to (256, 256)             |
+|     Tensor Shape: Input Tensor -> (1, 256, 256, 1) float32                                              |
+|                                            |                                                            |
+|                                            v                                                            |
+|  2. Stage-1 Restoration Engine (medical_ct_denoiser_full.keras)                                         |
+|     Input: (1, 256, 256, 1) -> Encoder -> Bottleneck (32, 32, 128) -> Decoder + Skip Connections         |
+|     Output: Restored Scan Tensor -> (1, 256, 256, 1) float32                                            |
+|     Computes Metrics: PSNR Gain (+10.53 dB) & SSIM Gain (+0.267) against Baseline                       |
+|                                            |                                                            |
+|                                            v                                                            |
+|  3. Stage-2 Diagnostic Engine (medical_ct_diagnostic_model.keras)                                       |
+|     Replicates Grayscale to 3-Channels: (1, 256, 256, 1) -> (1, 256, 256, 3)                             |
+|     ResNet-50V2 Backbone -> Global Average Pooling -> Dense(256) -> BatchNorm -> Dropout(0.4)           |
+|      ├── Head A (Softmax): Output -> (1, 3) [Chest, Brain, Abdomen] (Confidence Score & Top-2)           |
+|      └── Head B (Sigmoid): Output -> (1, 4) Normalized Bounding Box [ymin, xmin, ymax, xmax]             |
+|                                            |                                                            |
+|                                            v                                                            |
+|  4. XAI Grad-CAM Synthesizer (gradcam_utils.py)                                                         |
+|     Sub-model -> ResNet 'post_relu' layer output (8, 8, 2048) & class_output (1, 3)                    |
+|     tf.GradientTape w.r.t winning class -> GAP pooled grads -> ReLU -> COLORMAP_JET -> cv2.addWeighted   |
+|     Output: Base64 Encoded Blended PNG Image (alpha=0.45)                                                |
+|                                            |                                                            |
+|                                            v                                                            |
+|  5. LangGraph Stateful Multi-Agent Medical Board (medical_agent.py)                                     |
+|     Node 1: Radiologist Vision -> Node 2: Pinecone Vector RAG -> Node 3: Safety Auditor ->               |
+|     Node 4: Human-in-the-Loop (HITL) Radiologist Sign-Off Node                                          |
+|                                            |                                                            |
+|                                            v                                                            |
+|  6. AWS Cloud Services Vault (aws_s3_storage.py)                                                        |
+|     AWS S3 Storage (Presigned 15-min URL) + AWS EC2 Metadata + AWS CloudWatch Event Logger              |
+|                                                                                                         |
++---------------------------------------------------------------------------------------------------------+
+         |
+         | JSON Response (Base64 Scans, PSNR/SSIM, XAI Heatmap, Agent Consensus Report, S3 URL)
+         v
+ [ Glassmorphic PACS Workstation Dashboard (templates/index.html) ]
+                </div>
+
+                <div class="callout callout-warning">
+                    <strong>⚠️ Critical Architectural Detail (Memory & Concurrency):</strong><br>
+                    In <code>Dockerfile</code>, Gunicorn is explicitly configured with <code>--workers 1 --threads 4 --timeout 0</code>. TensorFlow C++ runtime loads model weights into process RAM. Multiple worker processes would duplicate the 256MB ResNet and 23MB U-Net in RAM, causing Out-Of-Memory (OOM) crashes on cloud containers. Single worker with multi-threading ensures shared memory access while handling concurrent client requests safely.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: CASCADED NEURAL NETWORKS MODULE -->
+        <section id="module-dl" class="section-container">
+            <div class="section-header">
+                <div class="section-number">03</div>
+                <h2 class="section-title">Cascaded Neural Networks: U-Net Denoiser & ResNet-50V2</h2>
+            </div>
+
+            <!-- 1. STAR -->
+            <div class="card">
+                <div class="framework-box">
+                    <div class="framework-title">1. STAR — Tell Your Project Story</div>
+                    <div class="spoken-answer">
+                        <span class="spoken-tag">🗣️ Spoken Answer (Hinglish Interview Mode):</span>
+                        "<strong>S (Situation):</strong> Medical CT scans mein ek major conflict hota hai — agar hum high-radiation scan karte hai toh patient ko lifetime cancer risk hota hai, aur agar low-dose radiation (quarter-dose) use karein toh severe quantum noise aur streaking artifacts aa jaten hai jisse doctor se micro-lesions miss ho sakti hain.<br><br>
+                        <strong>T (Task):</strong> Mera task ek aisa deep learning pipeline banana tha jo low-dose CT scans ko high-dose clean scan mein reconstruct kare aur saath hi saath tissue anomalies aur anatomical organ ko classify aur locate kare.<br><br>
+                        <strong>A (Action):</strong> Maine ek 2-Stage Cascaded Neural Network architecture design ki:<br>
+                        - <em>Stage-1:</em> Custom 2D Convolutional U-Net Autoencoder (<code>train_unified_unet.py</code>) jo noise-invariant representations extract karke clean scan reconstruct karta hai.<br>
+                        - <em>Stage-2:</em> Multi-Task ResNet-50V2 backbone (<code>train_diagnostic_stage2.py</code>) jo ImageNet transfer learning se organ classification (Softmax) aur bounding box regression (Sigmoid) ek saath run karta hai.<br><br>
+                        <strong>R (Result):</strong> Is cascade engine ne benchmark validation par +10.53 dB PSNR gain, +0.267 SSIM gain achieve kiya aur overall triage classification accuracy 98.6% rahi jisme Normal scans par 100% specificity (Zero False Alarms) mili."
+                    </div>
+                </div>
+
+                <!-- 2. PREP -->
+                <div class="framework-box">
+                    <div class="framework-title">2. PREP — Explain Technical Decisions</div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                        <strong>P (Point):</strong> Maine Stage-1 denoising ke liye U-Net autoencoder aur Stage-2 diagnostics ke liye ResNet-50V2 choose kiya.<br>
+                        <strong>R (Reason):</strong> U-Net skip-connections low-level spatial detail (edges, tissue boundaries) ko decoder mein directly pass karti hain jo image reconstruction ke liye mandatory hai. ResNet-50V2 residual skip connections vanishing gradient prevent karte hain aur dense multi-task heads (Classification + Localization) ko feature representation simplify karte hain.<br>
+                        <strong>E (Evidence):</strong> Direct MSE/MAE validation par U-Net ne noise power ko >70% reduce kiya (PSNR baseline 28.61 dB se 39.14 dB tak push hua). ResNet-50V2 baseline standard CNN ke comparsion mein 98.6% triage accuracy guarantee karta hai.<br>
+                        <strong>P (Point):</strong> Isi wajeh se ye cascaded setup medical image restoration aur anomaly detection ke liye ideal system hai.
+                    </p>
+                </div>
+
+                <!-- 3. PROBLEM -> APPROACH -> TRADE-OFF -->
+                <div class="framework-box">
+                    <div class="framework-title">3. Problem → Approach → Trade-off</div>
+                    <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 20px;">
+                        <li><strong>Problem Solved:</strong> Low-dose CT noise degradation and cognitive radiologist fatigue.</li>
+                        <li><strong>Approaches Considered:</strong> Standard Gaussian/Bilateral smoothing filters (blurs sharp edges), Single monolithic CNN (struggles to balance pixel-level reconstruction with high-level classification).</li>
+                        <li><strong>Chosen Approach:</strong> Two-stage decoupled cascade — U-Net cleans the image first, then ResNet diagnoses the restored clean tensor.</li>
+                        <li><strong>Trade-off:</strong> Higher inference latency (sequential execution takes ~180ms on CPU), but offers strict modularity and diagnostic clarity.</li>
+                    </ul>
+                </div>
+
+                <!-- 4. ARCHITECTURE -> FLOW -> FAILURE -->
+                <div class="framework-box">
+                    <div class="framework-title">4. Architecture → Flow → Failure</div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                        <strong>Architecture:</strong> <code>app.py</code> pre-loads both <code>medical_ct_denoiser_full.keras</code> and <code>medical_ct_diagnostic_model.keras</code> at startup in RAM.<br>
+                        <strong>Flow:</strong> Raw slice -> Min-Max scaling -> U-Net <code>predict()</code> -> Restored slice -> Replicated to 3 channels -> ResNet <code>predict()</code> -> Organ logits + BBox tensor.<br>
+                        <strong>Failure Handling (Git LFS / Weights Missing):</strong> Code mein active fallback exists! Agar <code>.keras</code> weight file missing ho, <code>app.py</code> automatically 3x3 local average NumPy box-filter + contrast clamping trigger karta hai, aur diagnostic stage intensity profile density scanner par fallback hoti hai. Server kabhi crash nahi hota!
+                    </p>
+                </div>
+
+                <!-- 5. OWNERSHIP -->
+                <div class="framework-box">
+                    <div class="framework-title">5. Ownership — Know What YOU Did</div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                        100% individual effort. Created custom dataset processing scripts (<code>prepare_unified_dataset.py</code>), designed U-Net layer structure, fine-tuned ResNet backbone with freeze/unfreeze stages (<code>train_diagnostic_stage2.py</code>), and wrote automated dataset validation suite (<code>validate_models_on_dataset.py</code>).
+                    </p>
+                </div>
+
+                <!-- Code Block -->
+                <div class="card-subtitle" style="margin-top: 20px;">💻 Code Architecture Highlight (train_diagnostic_stage2.py)</div>
+                <pre><code># Multi-Task ResNet-50V2 Architecture with Dual Heads
+def build_multi_task_diagnostic_model(input_shape=(256, 256, 1)):
+    inputs = layers.Input(shape=input_shape)
+    
+    # Replicate Grayscale channel to 3 channels for ImageNet compatibility
+    x_3ch = layers.Concatenate(axis=-1)([inputs, inputs, inputs])
+    
+    # Pre-trained ResNet50V2 Backbone (Frozen initially)
+    base_model = tf.keras.applications.ResNet50V2(
+        input_shape=(256, 256, 3), include_top=False, weights='imagenet'
+    )
+    base_model.trainable = False
+    
+    features = base_model(x_3ch)
+    gap = layers.GlobalAveragePooling2D()(features)
+    dense = layers.Dense(256, activation="relu")(gap)
+    dense = layers.Dropout(0.4)(dense)
+    
+    # Head 1: Organ Classification (Chest, Brain, Abdomen)
+    class_output = layers.Dense(3, activation="softmax", name="class_output")(dense)
+    
+    # Head 2: Bounding Box Regression [ymin, xmin, ymax, xmax]
+    bbox_output = layers.Dense(4, activation="sigmoid", name="bbox_output")(dense)
+    
+    model = models.Model(inputs=inputs, outputs=[class_output, bbox_output])
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+        loss={'class_output': 'sparse_categorical_crossentropy', 'bbox_output': 'mse'},
+        metrics={'class_output': 'accuracy', 'bbox_output': 'mae'}
+    )
+    return model</code></pre>
+
+                <!-- Quick-Fire Decision Block -->
+                <div class="card-subtitle" style="margin-top: 24px;">⚡ Quick-Fire Decision Summary</div>
+                <div class="decision-grid">
+                    <div class="decision-cell">
+                        <div class="decision-label">What?</div>
+                        <div class="decision-value">U-Net + ResNet-50V2 Multi-Task Model</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">Why?</div>
+                        <div class="decision-value">Decouple image denoising from anomaly classification</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">Alternatives?</div>
+                        <div class="decision-value">Single End-to-End CNN, Vision Transformers (ViT)</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">Trade-off?</div>
+                        <div class="decision-value">Double forward pass increases memory & compute latency</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">What to change now?</div>
+                        <div class="decision-value">Use lightweight MobileNetV3 or TensorRT engine quantization</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: MATHEMATICAL LOSS FUNCTIONS & OPTIMIZATION -->
+        <section id="math-loss" class="section-container">
+            <div class="section-header">
+                <div class="section-number">04</div>
+                <h2 class="section-title">Mathematical Loss Functions & Optimization Deep Dive</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">🧮 Mathematical Formulations</div>
+
+                <h4 style="color: var(--accent-cyan); margin: 16px 0 8px 0;">1. Peak Signal-to-Noise Ratio (PSNR)</h4>
+                <div class="math-box">
+                    \text{PSNR} = 10 \cdot \log_{10} \left( \frac{\text{MAX}_I^2}{\text{MSE}} \right) = 20 \cdot \log_{10} (\text{MAX}_I) - 10 \cdot \log_{10} (\text{MSE})
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary);">
+                    Where $\text{MAX}_I = 1.0$ (for normalized float32 images) and $\text{MSE} = \frac{1}{m \cdot n} \sum_{i=0}^{m-1} \sum_{j=0}^{n-1} [I(i,j) - K(i,j)]^2$. A PSNR gain of <strong>+10.53 dB</strong> indicates a 73.4% reduction in noise power!
+                </p>
+
+                <h4 style="color: var(--accent-cyan); margin: 20px 0 8px 0;">2. Structural Similarity Index Measure (SSIM)</h4>
+                <div class="math-box">
+                    \text{SSIM}(x, y) = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + \mu_y^2 + C_1)(\sigma_x^2 + \sigma_y^2 + C_2)}
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary);">
+                    Measures luminance ($\mu$), contrast ($\sigma$), and structural correlation ($\sigma_{xy}$). CASCADE pushes SSIM from 0.6575 to <strong>0.9245</strong>, ensuring organ boundaries and bone structures are preserved.
+                </p>
+
+                <h4 style="color: var(--accent-cyan); margin: 20px 0 8px 0;">3. Multi-Task Weighted Loss Function (ResNet-50V2)</h4>
+                <div class="math-box">
+                    \mathcal{L}_{\text{total}} = \lambda_{\text{class}} \cdot \mathcal{L}_{\text{SparseCategoricalCrossentropy}}(y_{\text{true}}, \hat{y}_{\text{class}}) + \lambda_{\text{bbox}} \cdot \mathcal{L}_{\text{MSE}}(b_{\text{true}}, \hat{b}_{\text{bbox}})
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary);">
+                    In <code>kaggle_train_notebook.py</code>: $\lambda_{\text{class}} = 1.0$ and $\lambda_{\text{bbox}} = 0.5$. Weighting bounding box loss at 0.5 prevents coordinate gradients from overpowering classification softmax gradients during backpropagation.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 5: DATASET ENGINEERING & KAGGLE FINE-TUNING -->
+        <section id="dataset-kaggle" class="section-container">
+            <div class="section-header">
+                <div class="section-number">05</div>
+                <h2 class="section-title">Dataset Engineering, HU Calibration & Kaggle Fine-Tuning</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">📊 Dataset Split & Augmentation Pipeline</div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+                    Dataset contains clinical CT slices separated by organ type (Chest, Brain, Abdomen) and severity rating (Normal, Medium Risk, High Risk) in <code>data/separated_scans</code>.
+                </p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Organ Category</th>
+                            <th>Severity Folders</th>
+                            <th>Paired File Convention</th>
+                            <th>Normalized Annotation format</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Chest</strong></td>
+                            <td><code>normal</code>, <code>medium_risk</code>, <code>high_risk</code></td>
+                            <td><code>sample_001_noisy.png</code> $\leftrightarrow$ <code>sample_001_clean.png</code></td>
+                            <td><code>[ymin, xmin, ymax, xmax]</code> in <code>labels.json</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Brain</strong></td>
+                            <td><code>normal</code>, 2<code>medium_risk</code>, <code>high_risk</code></td>
+                            <td><code>brain_014_noisy.png</code> $\leftrightarrow$ <code>brain_014_clean.png</code></td>
+                            <td><code>organ_label: 1</code> (Sparse Integer)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Abdomen</strong></td>
+                            <td><code>normal</code>, <code>medium_risk</code>, <code>high_risk</code></td>
+                            <td><code>abdo_030_noisy.png</code> $\leftrightarrow$ <code>abdo_030_clean.png</code></td>
+                            <td><code>organ_label: 2</code> (Sparse Integer)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="card-subtitle" style="margin-top: 24px;">🏎️ Kaggle GPU 2-Stage Training Strategy (kaggle_train_notebook.py)</div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    - <strong>Stage 1 (Frozen Backbone):</strong> ResNet-50V2 ImageNet backbone frozen (<code>trainable = False</code>). Trained dense heads with Adam ($\text{lr} = 10^{-4}$) for 20 epochs.<br>
+                    - <strong>Stage 2 (Fine-Tuning):</strong> Top 80 layers of ResNet un-frozen (<code>base.layers[:-80]</code>). Trained with lower learning rate ($\text{lr} = 10^{-5}$) for 15 epochs to adapt high-level feature maps to grayscale medical CT textures.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 6: EXPLAINABLE AI & GRAD-CAM ENGINE -->
+        <section id="module-xai" class="section-container">
+            <div class="section-header">
+                <div class="section-number">06</div>
+                <h2 class="section-title">Explainable AI (XAI) & Grad-CAM Heatmap Engine</h2>
+            </div>
+
+            <div class="card">
+                <!-- STAR -->
+                <div class="framework-box">
+                    <div class="framework-title">1. STAR — Tell Your Project Story</div>
+                    <div class="spoken-answer">
+                        <span class="spoken-tag">🗣️ Spoken Answer (Hinglish Interview Mode):</span>
+                        "Deep learning models ko clinical environment mein 'black box' bol kar reject kar diya jaata hai. Maine <code>gradcam_utils.py</code> likha jo ResNet-50V2 ki final convolutional layer (<code>post_relu</code>) par gradients track karta hai using <code>tf.GradientTape</code>. Winning organ class score ke gradients compute karke feature maps ko weight kiya jaata hai aur OpenCV se JET color-mapped heatmap generate karke original restored CT scan par blend kiya jaata hai. Radiologists exactly dekh sakte hain ki neural network kis exact anatomical pixel cluster par focus kar raha hai."
+                    </div>
+                </div>
+
+                <!-- Technical Deep Dive -->
+                <div class="card-subtitle">⚙️ Mathematical & Code Mechanism (gradcam_utils.py)</div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    1. <strong>Gradient Tape Target:</strong> Construct a sub-model mapping model input to <code>last_conv_layer.output</code> (ResNet's <code>post_relu</code> layer) and <code>class_output</code>.<br>
+                    2. <strong>Pooled Gradients:</strong> Compute $\alpha_k^c = \frac{1}{Z} \sum_i \sum_j \frac{\partial y^c}{\partial A_{i,j}^k}$ using <code>tf.reduce_mean(grads, axis=(0,1,2))</code>.<br>
+                    3. <strong>Weighted Map & ReLU:</strong> $L_{\text{Grad-CAM}}^c = \text{ReLU}\left(\sum_k \alpha_k^c A^k\right)$. Normalize between $0.0$ and $1.0$.<br>
+                    4. <strong>Colormap & Alpha Blending:</strong> Convert normalized intensity array to 8-bit uint8, apply <code>cv2.COLORMAP_JET</code>, and blend with restored grayscale image: <code>cv2.addWeighted(original_rgb, 0.55, heatmap_rgb, 0.45, 0.0)</code>.
+                </p>
+
+                <pre><code># Grad-CAM Gradient Tape Implementation (gradcam_utils.py)
+def generate_gradcam(model, img_array, class_idx, last_conv_layer_name="post_relu"):
+    resnet = model.get_layer("resnet50v2")
+    last_conv_layer = resnet.get_layer(last_conv_layer_name)
+    
+    grad_model = tf.keras.models.Model(
+        inputs=model.inputs,
+        outputs=[last_conv_layer.output, model.get_layer("class_output").output]
+    )
+    
+    with tf.GradientTape() as tape:
+        conv_outputs, predictions = grad_model(np.expand_dims(img_array, axis=0))
+        loss = predictions[:, class_idx]
+        
+    grads = tape.gradient(loss, conv_outputs)
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    
+    heatmap = conv_outputs[0] @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+    heatmap = tf.maximum(heatmap, 0.0) / (tf.math.reduce_max(heatmap) + 1e-8)
+    
+    heatmap_resized = cv2.resize(heatmap.numpy(), (256, 256))
+    heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+    return cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)</code></pre>
+
+                <div class="callout callout-flag">
+                    <strong>[FLAG] Ambiguity / Fallback Flag:</strong><br>
+                    Grad-CAM requires direct internal access to Keras activation layer names (<code>post_relu</code>). If the backbone layer is serialized differently or weights are missing, <code>app.py</code> executes a <strong>Radial Glow Heatmap Fallback</strong> — generating a simulated orange-red radial gradient centered at the intensity center so that the UI never breaks.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: LANGGRAPH MULTI-AGENT MEDICAL BOARD -->
+        <section id="module-langgraph" class="section-container">
+            <div class="section-header">
+                <div class="section-number">07</div>
+                <h2 class="section-title">LangGraph & LangChain Stateful Multi-Agent Board (with HITL)</h2>
+            </div>
+
+            <div class="card">
+                <!-- STAR -->
+                <div class="framework-box">
+                    <div class="framework-title">1. STAR — Tell Your Project Story</div>
+                    <div class="spoken-answer">
+                        <span class="spoken-tag">🗣️ Spoken Answer (Hinglish Interview Mode):</span>
+                        "Single-prompt AI model clinical summary dene mein unreliable hota hai. Isliye maine <code>medical_agent.py</code> mein ek stateful <code>LangGraph StateGraph</code> compile kiya jisme 4 specialized agents step-by-step collaborate karte hain:<br>
+                        1. <em>Radiologist Vision Agent:</em> Image metrics (+PSNR/SSIM) parse karta hai.<br>
+                        2. <em>Clinical RAG Specialist Agent:</em> Pinecone vector search se ACR/Fleischner clinical guidelines pull karta hai.<br>
+                        3. <em>Safety Auditor Agent:</em> High-risk emergency escalation flag check karta hai.<br>
+                        4. <em>Human-in-the-Loop (HITL) Verification Node:</em> Attending radiologist ka digital sign-off mandate karta hai."
+                    </div>
+                </div>
+
+                <div class="card-subtitle">🔄 LangGraph State Graph Workflow</div>
+                <div class="diagram-box">
+ [ Entry Point ]
+       |
+       v
+ +----------------------------------+
+ | 1. Radiologist Vision Agent Node |  ---> Parses U-Net PSNR/SSIM metrics & ResNet BBox findings
+ +----------------------------------+
+       |
+       v
+ +----------------------------------+
+ | 2. Clinical RAG Specialist Node  |  ---> Queries Pinecone Cloud / 384d Dense Vector Matrix
+ +----------------------------------+
+       |
+       v
+ +----------------------------------+
+ | 3. Safety Auditor Agent Node     |  ---> Checks emergency flags & 100% specificity criteria
+ +----------------------------------+
+       |
+       v
+ +----------------------------------+
+ | 4. Human Radiologist HITL Node   |  ---> Requires human verification & sign-off (/api/copilot/approve)
+ +----------------------------------+
+       |
+       v
+    [ END ]
+                </div>
+
+                <pre><code># LangGraph Stateful Agentic Assembly (medical_agent.py)
+class ASCADEMedicalBoard:
+    def __init__(self):
+        if LANGGRAPH_AVAILABLE:
+            workflow = StateGraph(AgentState)
+            workflow.add_node("radiologist_vision", radiologist_vision_agent_node)
+            workflow.add_node("clinical_rag_specialist", clinical_rag_specialist_node)
+            workflow.add_node("safety_auditor", safety_auditor_agent_node)
+            workflow.add_node("human_verification", human_radiologist_approval_node)
+            
+            workflow.set_entry_point("radiologist_vision")
+            workflow.add_edge("radiologist_vision", "clinical_rag_specialist")
+            workflow.add_edge("clinical_rag_specialist", "safety_auditor")
+            workflow.add_edge("safety_auditor", "human_verification")
+            workflow.add_edge("human_verification", END)
+            
+            self.app = workflow.compile()</code></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 8: PINECONE CLOUD & DENSE VECTOR RAG ENGINE -->
+        <section id="module-pinecone" class="section-container">
+            <div class="section-header">
+                <div class="section-number">08</div>
+                <h2 class="section-title">Pinecone Cloud & 384-Dim Dense Vector Clinical RAG</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">🧠 Hybrid Vector Retrieval Mechanism (pinecone_rag_engine.py)</div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    The clinical RAG module grounds agent recommendations in peer-reviewed medical protocols (ACR Appropriateness Criteria, Fleischner 2024 Pulmonary Nodule Guidelines, LI-RADS Abdominal Criteria).
+                </p>
+
+                <div class="decision-grid" style="margin-bottom: 20px;">
+                    <div class="decision-cell">
+                        <div class="decision-label">Vector Space</div>
+                        <div class="decision-value">384-Dimensional Dense Space</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">Cloud Index</div>
+                        <div class="decision-value">Pinecone Serverless (AWS us-east-1)</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">Similarity Metric</div>
+                        <div class="decision-value">Cosine Similarity ($\cos \theta = \frac{A \cdot B}{\|A\| \|B\|}$)</div>
+                    </div>
+                    <div class="decision-cell">
+                        <div class="decision-label">Hybrid Fallback</div>
+                        <div class="decision-value">Dense Vector Matrix (No Cloud Key Needed)</div>
+                    </div>
+                </div>
+
+                <pre><code># Dense Embedding Generator & Vector Match (pinecone_rag_engine.py)
+class DenseEmbeddingGenerator:
+    def __init__(self, vector_dim: int = 384):
+        self.vector_dim = vector_dim
+
+    def embed_text(self, text: str) -> List[float]:
+        tokens = re.findall(r'\w+', text.lower())
+        vec = [0.0] * self.vector_dim
+        for token in tokens:
+            idx = abs(hash(token)) % self.vector_dim
+            vec[idx] += 1.0
+        norm = math.sqrt(sum(x * x for x in vec))
+        return [x / norm for x in vec] if norm > 0 else vec
+
+    @staticmethod
+    def cosine_similarity(v1: List[float], v2: List[float]) -> float:
+        return float(sum(a * b for a, b in zip(v1, v2)))</code></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 9: DICOM INGESTION ETL & HIPAA SCRUBBING -->
+        <section id="module-etl" class="section-container">
+            <div class="section-header">
+                <div class="section-number">09</div>
+                <h2 class="section-title">Automated DICOM ETL & HIPAA De-Identification Pipeline</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">⚙️ 4-Stage Medical ETL Architecture (data_pipeline.py)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ETL Stage</th>
+                            <th>Operation</th>
+                            <th>Code Implementation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1. Extract</strong></td>
+                            <td>Discovers raw DICOM <code>.dcm</code> files via <code>pydicom</code> or standard slices. Parses Hounsfield Units (HU).</td>
+                            <td><code>CASCADEDICOMPipeline.extract_files()</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>2. Anonymize</strong></td>
+                            <td>HIPAA Privacy Safe Harbor de-identification. Scrubs Patient Name, SSN, Institution while preserving age/sex/modality.</td>
+                            <td><code>anonymize_hipaa_metadata()</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. Transform</strong></td>
+                            <td>Min-max HU tensor normalization -> U-Net denoising -> PSNR (+10.53 dB) & SSIM (+0.267) gain calculation -> ResNet anomaly bounds.</td>
+                            <td><code>transform_file()</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>4. Load</strong></td>
+                            <td>Saves cleaned PNG slices, noise difference maps, and outputs a structured JSON Data Lake manifest.</td>
+                            <td><code>load_data_lake()</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 10: AWS PACS CLOUD INFRASTRUCTURE -->
+        <section id="module-aws" class="section-container">
+            <div class="section-header">
+                <div class="section-number">10</div>
+                <h2 class="section-title">AWS PACS Cloud Infrastructure & Docker Deployment</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">☁️ AWS Cloud Services Trio (aws_s3_storage.py)</div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+                    Integrates 3 production AWS cloud components via <code>boto3</code> with non-blocking local fallback execution:
+                </p>
+                <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 20px; margin-bottom: 20px;">
+                    <li><strong>AWS S3 (Simple Storage Service):</strong> Stores PACS scan archives and generates 15-minute expiration presigned URLs (<code>generate_presigned_url</code>) for HIPAA-compliant shareable links.</li>
+                    <li><strong>AWS EC2 (Elastic Compute Cloud):</strong> Manages container server metadata (<code>t3.medium</code> instance profile, 2 vCPU, 4GB RAM).</li>
+                    <li><strong>AWS CloudWatch:</strong> System event and model execution latency logger (Log Group: <code>/aws/cascade/pacs-engine</code>).</li>
+                </ul>
+
+                <div class="card-subtitle">🐳 Dockerfile & Production WSGI Tuning</div>
+                <pre><code>FROM python:3.10-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=7860
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN mkdir -p static/uploads && chmod 777 static/uploads
+EXPOSE 7860
+
+# Gunicorn WSGI Execution with single-process multi-threading to protect RAM
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 0 app:app</code></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 11: REST API ENDPOINT SPECIFICATION & METRICS -->
+        <section id="api-spec" class="section-container">
+            <div class="section-header">
+                <div class="section-number">11</div>
+                <h2 class="section-title">REST API Endpoint Specification & Telemetry</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">🌐 Backend API Route Map (app.py)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>HTTP Method</th>
+                            <th>Route Path</th>
+                            <th>Function & Responsibility</th>
+                            <th>Response Payload</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>POST</code></td>
+                            <td><code>/process</code></td>
+                            <td>Main inference pipeline: DICOM parsing, U-Net denoising, ResNet prediction, Grad-CAM, LangGraph, S3 sync.</td>
+                            <td>JSON Array of Base64 images, metrics, diagnosis, top-2 distribution & S3 links.</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST</code></td>
+                            <td><code>/api/copilot/chat</code></td>
+                            <td>Interactive multi-agent chat consultation endpoint.</td>
+                            <td>JSON object with agent consensus report and vector RAG citations.</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST</code></td>
+                            <td><code>/api/copilot/approve</code></td>
+                            <td>Human-in-the-Loop (HITL) radiologist verification & digital sign-off.</td>
+                            <td>JSON object with updated HITL status badge and verified report.</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST/GET</code></td>
+                            <td><code>/api/pipeline/run</code></td>
+                            <td>Triggers background DICOM Ingestion, HIPAA Anonymization & Data Lake export.</td>
+                            <td>JSON summary manifest of processed Data Lake records.</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST</code></td>
+                            <td><code>/api/s3/upload</code></td>
+                            <td>AWS Cloud sync endpoint (S3 Vault + CloudWatch Event Logging).</td>
+                            <td>JSON object with presigned S3 URL and log status.</td>
+                        </tr>
+                        <tr>
+                            <td><code>GET</code></td>
+                            <td><code>/metrics</code></td>
+                            <td>Prometheus & System Health observability monitoring endpoint.</td>
+                            <td>JSON telemetry: service uptime, model load states, benchmark gains.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 12: PACS WORKSTATION & FRONTEND -->
+        <section id="module-frontend" class="section-container">
+            <div class="section-header">
+                <div class="section-number">12</div>
+                <h2 class="section-title">Interactive PACS Console & Glassmorphic UI Dashboard</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">🎨 Key Dashboard Components (templates/index.html & docs/v3.md)</div>
+                <ul style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 20px;">
+                    <li><strong>Draggable Split Comparison Slider:</strong> Live visual comparison between raw noisy low-dose input scan and U-Net restored high-dose equivalent scan.</li>
+                    <li><strong>View Toggle Toolbar:</strong> Dynamic view controller switching between <em>Noisy vs Clean Split View</em> and <em>Grad-CAM Explainable AI View</em>.</li>
+                    <li><strong>Confidence Score Pills & Progress Bars:</strong> Dynamic color coding based on diagnostic certainty:
+                        <ul style="margin-top: 6px;">
+                            <li>🟢 <strong>Green</strong> ($\ge 80\%$): High clinical certainty</li>
+                            <li>🟡 <strong>Amber</strong> ($60\% - 80\%$): Moderate diagnostic variance</li>
+                            <li>🔴 <strong>Red</strong> ($< 60\%$): Low confidence safety alert banner automatically displayed</li>
+                        </ul>
+                    </li>
+                    <li><strong>Clinical Print Layout Overrides:</strong> Custom <code>@media print</code> CSS rules hide interactive toolbar buttons and format restored scans alongside Grad-CAM heatmaps side-by-side (240px width) for physical patient archives.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 13: 14 MASTER COUNTER QUESTIONS & MODEL ANSWERS -->
+        <section id="counter-questions" class="section-container">
+            <div class="section-header">
+                <div class="section-number">13</div>
+                <h2 class="section-title">14 Master Interview Counter-Questions & Model Answers</h2>
+            </div>
+
+            <div class="card">
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 20px;">
+                    These 14 technical counter-questions cover system design weak points, memory limits, DICOM edge cases, loss functions, and scaling bottlenecks.
+                </p>
+
+                <!-- Q1 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q1: Low-dose CT scan mein noise poison (quantum mottle) random hoti hai. AAPKA U-Net overfit kyu nahi hua?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> U-Net ko train karte waqt humne dataset mein <code>prepare_unified_dataset.py</code> ke through synthetic Gaussian aur Poisson noise injections perform kiye the paired clean slices par. Secondary factor: Bottleneck layer dimensions (128 filters) act as a structural compression bottleneck, forcing the network to memorize underlying anatomical organ manifold geometry rather than high-frequency noise variance.
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q2: Agar user DICOM file ke jagah 8-bit standard PNG image upload kare toh aapka Hounsfield Unit (HU) scaling logic fail nahi hoga?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> <code>app.py</code> ke <code>process_image()</code> function mein clean try-except branching handle ki gayi hai. Agar <code>pydicom</code> scan parse kar leta hai, toh raw HU window range (e.g., -1000 to +1000) ko min-max normalize <code>(pixel - p_min)/(p_max - p_min)</code> kiya jaata hai. Standard PNG/JPG ke case mein Pillow <code>color_mode='grayscale'</code> resize ke saath directly <code>0.0 - 1.0</code> float32 tensor conversion hota hai.
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q3: Gunicorn mein <code>--workers 1 --threads 4</code> kyu rakha? Multi-core server par 4 workers run karke high throughput kyu nahi liya?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> TensorFlow runtime Python RAM memory heap ke andar ~256MB Diagnostic ResNet weight tensor lock karta hai. Har worker process alag OS process create karta hai, jisse memory usage 4x multiplies (over 1GB RAM) ho kar free tier cloud containers par Out-Of-Memory (OOM) crash cause karta. Single worker process ke andar Python GIL threads I/O requests parallelize karte hain jabki C++ TensorFlow execution thread-safe tensor memory share karta hai.
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q4: Grad-CAM generation mein agar classification model wrong prediction de, toh kya Grad-CAM heatmap bhi wrong site highlight karega?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> Haan, Grad-CAM target class score $y^c$ ke w.r.t gradients calculate karta hai. Is point ko mitigate karne ke liye humne <code>app.py</code> mein user-selected organ override aur Top-2 diagnostic probability distribution pass kiya hai, plus agar neural confidence 60% se neeche drop hoti hai toh UI par automatic <strong>Low Confidence Alert Banner</strong> trigger hota hai taaki radiologist manual check kar sake.
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q5: LangGraph workflow synchronous hai. Agar Pinecone Cloud RAG query slow ho jaye, toh kya web page freeze nahi hoga?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> <code>pinecone_rag_engine.py</code> mein 2-second timeout ke saath local 384-dimensional dense vector matrix fallback integrated hai. Agar Pinecone API network delay trigger karta hai, system immediately local in-memory cosine similarity search run karta hai, ensuring latency 50ms ke andar wrap ho.
+                    </div>
+                </div>
+
+                <!-- Q6 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q6: Real-world medical CT slices DICOM format mein 512x512 resolution ki hoti hain. AAP 256x256 par downsample kyu kar rahe ho? Isse diagnostic resolution loss nahi hota?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> 256x256 resolution initial GPU training speed aur web inference latency optimize karne ke liye choose kiya gaya baseline tha. Production DICOM deployment ke liye, system Patch-based U-Net inference use kar sakta hai jahan 512x512 image ko four 256x256 overlapping patches mein parse karke denoise kiya jaye without spatial resolution drop.
+                    </div>
+                </div>
+
+                <!-- Q7 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q7: Model drift aur false positive rate check karne ke liye production mein kya monitor kar rahe ho?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> <code>app.py</code> mein <code>/metrics</code> endpoint exposed hai jo system health, U-Net PSNR gain, aur AWS S3 cloud vault status return karta hai. In-production telemetry data AWS CloudWatch log group (<code>/aws/cascade/pacs-engine</code>) mein ingest hota hai jahan custom metrics push karke specificity drift flag kar sakte hain.
+                    </div>
+                </div>
+
+                <!-- Q8 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q8: Aapne bounding box regression ke liye Sigmoid activation kyu lagaya and MSE loss kyu use kiya instead of IoU loss?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> Coordinates $[y_{\min}, x_{\min}, y_{\max}, x_{\max}]$ normalized range $[0.0, 1.0]$ mein bound rehte hain, isi wajeh se Sigmoid output layer output ko 0 aur 1 ke beech mathematically clamp karti hai. Fast multi-task transfer learning training ke liye MSE baseline loss lagaya tha; production upgrade mein IoU (Intersection over Union) ya GIoU loss custom Keras loss function se implement karna better hoga.
+                    </div>
+                </div>
+
+                <!-- Q9 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q9: U-Net training ke liye Adam optimizer kyu prefer kiya over SGD with Momentum?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> Adam adaptive learning rates per-parameter compute karta hai ($\beta_1=0.9, \beta_2=0.999$), jo image-to-image reconstruction models ke gradient sparsity ke liye highly suited hai. SGD with Momentum hyperparameter tuning ki precise tuning demand karta hai, jabki Adam rapid convergence initial epochs mein guarantee karta hai.
+                    </div>
+                </div>
+
+                <!-- Q10 -->
+                <div class="qa-item">
+                    <div class="qa-q">Q10: Agar Pinecone vector retrieval score 60% se kam aaye (low similarity), toh LLM medical hallucination prevent kaise karte ho?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> <code>medical_agent.py</code> ke Safety Auditor Node mein strictly 100% specificity filter check laga hai. Agar vector similarity score threshold (<0.60) drop karta hai, system default conservative baseline criteria append kar deta hai aur report par 'Low Context Certainty - Radiologist Manual Correlation Required' flag markup kar deta hai.
+                    </div>
+                </div>
+
+                <!-- Q11: PSNR vs SSIM -->
+                <div class="qa-item">
+                    <div class="qa-q">Q11: PSNR aur SSIM ke beech exact difference kya hai, aur sirf PSNR medical imaging ke liye kyu enough nahi hai?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> PSNR strictly pixel-level Mean Squared Error (MSE) calculate karta hai, lekin human visual perception organ texture aur edge sharpness ko prioritze karti hai. Ek image high PSNR hone ke baad bhi blurry ho sakti hai. SSIM structural correlation, luminance, aur contrast check karta hai; isiliye clinical restoration verification ke liye dono metrics (+10.53 dB PSNR gain & +0.267 SSIM gain) saath mein report kiye gaye hain.
+                    </div>
+                </div>
+
+                <!-- Q12: DICOM Slope and Intercept -->
+                <div class="qa-item">
+                    <div class="qa-q">Q12: DICOM file se true Hounsfield Units (HU) extract karne ke liye Rescale Slope ($m$) aur Intercept ($b$) ka formula kya hota hai?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> True Hounsfield Units formula $\text{HU} = \text{PixelValue} \times m + b$ hota hai, jahan $m = \text{ds.RescaleSlope}$ aur $b = \text{ds.RescaleIntercept}$. PyDicom raw pixel values ko physical HU density units (e.g., Air = -1000 HU, Water = 0 HU, Bone = +1000 HU) mein mapping dene ke liye ye metadata parameters use karta hai.
+                    </div>
+                </div>
+
+                <!-- Q13: Concurrent HITL sign-offs -->
+                <div class="qa-item">
+                    <div class="qa-q">Q13: Agar 2 attending radiologists ek hi second mein `/api/copilot/approve` trigger karein, toh race condition handling kaise hoti hai?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> State Graph state object immutable TypedDict ke roop mein maintain hota hai. Flask server thread-safe Gunicorn environment mein chal raha hai aur database write layer audit trail record timestamped patient ID Hash key ke sath write karti hai, preventing transient state overwrites.
+                    </div>
+                </div>
+
+                <!-- Q14: Hospital PACS Scaling -->
+                <div class="qa-item">
+                    <div class="qa-q">Q14: Real hospital network mein 10,000 CT scans per hour process karne ke liye CASCADE ko scaling kaise karenge?</div>
+                    <div class="qa-a">
+                        <strong>Model Answer:</strong> Enterprise scaling ke liye, Flask WSGI ke aage DICOM C-STORE Receiver (e.g., Orthanc / DCM4CHEE server) deploy karke incoming scans ko AWS SQS queue ya Kafka topic mein push karenge. Async Celery/Ray worker nodes GPU-enabled Kubernetes (EKS) cluster par scale karenge, jahan TensorRT-optimized U-Net & ResNet engines batch inference execute karenge.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 14: HOSPITAL PACS INTEGRATION ROADMAP -->
+        <section id="hospital-roadmap" class="section-container">
+            <div class="section-header">
+                <div class="section-number">14</div>
+                <h2 class="section-title">Hospital PACS Integration & Enterprise Scaling Roadmap</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-subtitle">🏥 Clinical DICOM C-STORE Integration Architecture</div>
+                <div class="diagram-box">
+ [ Hospital Scanner CT Modality ] 
+         |
+         | DICOM C-STORE Protocol (Port 104)
+         v
+ [ Orthanc / DCM4CHEE DICOM PACS Server ]
+         |
+         | Webhook Trigger / SQS Event Notification
+         v
+ [ AWS SQS Queue: pacs-scan-ingest-queue ]
+         |
+         | Distributed Message Consumption
+         v
+ [ Kubernetes Worker Pool (AWS EKS - GPU Nodes) ]
+         | ---> 1. PyDicom DICOM Parsing & HIPAA Safe Harbor Scrubbing
+         | ---> 2. TensorRT-Quantized U-Net Denoising (FP16 Engine)
+         | ---> 3. TensorRT-Quantized ResNet-50V2 Diagnostic Inference
+         | ---> 4. LangGraph Multi-Agent RAG Board Consultation
+         v
+ [ Hospital DICOM Storage & Radiologist Viewer Workstation ]
+                </div>
+
+                <div class="callout callout-tip">
+                    <strong>🎯 System Design Conclusion Pitch:</strong><br>
+                    "Sir, CASCADE ko baseline prototype se hospital-wide enterprise engine banane ke liye DICOM PS3.10 standard compliance aur DICOM C-STORE / C-FIND protocol communication layer add karna hoga. Isse radiology departments apne existing PACS viewers (Jaise OsiriX ya Horos) se without browser interface direct automated denoising aur triage alerts receive kar sakenge."
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Smooth scrolling active link highlight
+        window.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                        });
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            document.querySelectorAll('section[id]').forEach((section) => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -59,28 +59,28 @@ CASCADE is engineered with a production-grade Python and web stack chosen for pe
 | :--- | :--- | :--- |
 | **Flask** | Backend Web API | Simple, lightweight, and native to the Python ecosystem. It allows seamless, overhead-free routing of image files directly into Python machine learning pipelines. |
 | **TensorFlow & Keras** | Deep Learning Core | The industry standard for complex neural networks. It powers both the symmetrical U-Net autoencoder (with custom skip-connection tensors) and the multi-task ResNet50V2 model. |
-| **PyDicom** | DICOM File Parser | Standardizes clinical interoperability. It parses metadata directly from standard medical `.dcm` headers (patient demographics, scan manufacturer) and normalizes Hounsfield Units (HU) for network inputs. |
+| **LangChain & LangGraph** | Multi-Agent AI Board | Powers a stateful multi-node clinical decision workflow (Radiologist Vision Agent -> Clinical RAG Specialist -> Emergency Safety Auditor). |
+| **PyDicom** | DICOM File Parser | Standardizes clinical interoperability. It parses metadata directly from standard medical `.dcm` headers (patient demographics, scan manufacturer) and normalizes Hounsfield Units (HU). |
+| **Data Pipeline (ETL)** | DICOM Ingestion Pipeline | End-to-end Extract, Transform, Load engine with HIPAA PII de-identification, batch tensor transformation, and JSON Data Lake export. |
+| **AWS Services (3)** | Cloud Infrastructure | **AWS S3** (PACS Storage & Presigned URLs), **AWS SQS** (Emergency Triage Alert Queue), and **AWS DynamoDB** (Clinical Audit Trail & Metadata Store). |
 | **OpenCV & Pillow** | Image Processing | Handles real-time image normalization, drawing of regression-head coordinates (neon bounding boxes), and generation of Grad-CAM attention heatmaps. |
-| **Modern HTML5 & CSS3** | PACS Frontend Dashboard | Designed as a custom dark-theme Picture Archiving and Communication System (PACS) monitor. Crafted without heavy external frameworks (like Tailwind) to keep frontend code lightweight and responsive. |
 | **Docker & Gunicorn** | Deployment | Containerizes the environment to prevent Python dependency drift. Gunicorn manages workers (`--workers 1 --threads 4`) to safe-guard memory and prevent CPU thread lockups on cloud containers. |
 
 ---
 
-## 🔄 Cascaded System Flow
+## 🔄 Cascaded Multi-Agent & Cloud Flow
 
 ```mermaid
 graph TD
-    A[Noisy Input CT: Quarter-Dose] --> B(U-Net Denoiser Model)
-    B -->|AI Restored Scan FD Equivalent| C(ResNet50V2 Diagnostic Model)
-    B -.->|Subtract from Input| D[Isolated Difference Map]
+    A[Raw DICOM / CT Scans] --> B[Automated DICOM ETL Data Pipeline]
+    B -->|HIPAA PII De-Identification| C(U-Net Denoising Engine)
+    C -->|Restored Scan| D(ResNet50V2 Multi-Task Diagnostic Model)
     
-    C -->|Multi-Task Heads| E[Localization Bounding Box]
-    C -->|Selected Class Weights| F[Grad-CAM Attention Map]
+    D -->|Organ & BBox Findings| E[LangGraph Multi-Agent Medical Board]
+    E -->|Vision Agent -> RAG Agent -> Safety Auditor| F[Consensus Triage & Radiologist Report]
     
-    B & E --> G(Clinical Rule Engine)
-    G -->|Statistical Scan Attenuation Analysis| H[Triage Severity & Recs]
-    
-    D & F & H & E --> I[Interactive PACS Dashboard]
+    C & D & F --> G[AWS S3 PACS Cloud Vault Manager]
+    G -->|Presigned Shareable Links| H[Interactive PACS Executive Dashboard]
 ```
 
 ---
