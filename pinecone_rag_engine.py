@@ -206,7 +206,7 @@ class PineconeClinicalRAG:
     def _init_pinecone(self):
         if not self.api_key or not PINECONE_SDK_AVAILABLE:
             self.pinecone_active = False
-            print("[Pinecone Engine] Running in Dense Vector Local Matrix Mode (No Cloud API Key required)")
+            print("[WARNING] PINECONE_API_KEY missing or SDK unavailable. Using local fallback Dense Vector Matrix.")
             return
 
         try:
@@ -334,7 +334,8 @@ class PineconeClinicalRAG:
             "top_match_condition": top_match.get("condition") if top_match else "Unremarkable",
             "similarity_score": top_match.get("score") if top_match else 0.95,
             "vector_engine": engine_type,
-            "matches_count": len(matches)
+            "matches_count": len(matches),
+            "retrieval_mode": "pinecone" if self.pinecone_active else "local_fallback"
         }
 
 

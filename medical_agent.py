@@ -193,12 +193,17 @@ def human_radiologist_approval_node(state: AgentState) -> AgentState:
     # LLM DRAFTING: Use Free HuggingFace Inference API to generate a real medical report
     # --------------------------------------------------------------------------------
     ai_generated_synthesis = ""
-    try:
-        from huggingface_hub import InferenceClient
-        # Use a fast, free LLM available on HF Serverless API
-        client = InferenceClient("Qwen/Qwen2.5-72B-Instruct")
-        
-        prompt = f"""You are a senior AI radiologist assistant. Write a short, professional, and confident clinical report summary (3-4 sentences max) based ONLY on these facts. 
+    hf_token = os.environ.get("HF_TOKEN")
+    
+    if not hf_token:
+        ai_generated_synthesis = "LLM unavailable - template summary"
+    else:
+        try:
+            from huggingface_hub import InferenceClient
+            # Use a fast, free LLM available on HF Serverless API
+            client = InferenceClient("Qwen/Qwen2.5-72B-Instruct", token=hf_token, timeout=10)
+            
+            prompt = f"""You are a senior AI radiologist assistant. Write a short, professional, and confident clinical report summary (3-4 sentences max) based ONLY on these facts. 
 Organ: {organ}
 Risk Level: {severity}
 AI Observations: {obs}
@@ -206,15 +211,15 @@ Clinical Guidelines (RAG): {diff_text}
 
 Draft the final "Impression" section. You MUST explicitly mention the exact spatial coordinates [ymin, xmin, ymax, xmax] of the lesion and the U-Net PSNR improvement to prove this report is customized for this specific scan."""
 
-        response = client.chat_completion(
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=250,
-            temperature=0.3
-        )
-        ai_generated_synthesis = response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"[!] HuggingFace LLM Error: {e}")
-        ai_generated_synthesis = f"[API Rate Limit / Timeout on Free Serverless] Based on the localized focal findings and corresponding differential diagnoses, clinical correlation is advised as per standard protocols. (Error detail: {str(e)})"
+            response = client.chat_completion(
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=250,
+                temperature=0.3
+            )
+            ai_generated_synthesis = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"[!] HuggingFace LLM Error: {e}")
+            ai_generated_synthesis = "LLM unavailable - template summary"
     
     report = (
         f"{query_header}"

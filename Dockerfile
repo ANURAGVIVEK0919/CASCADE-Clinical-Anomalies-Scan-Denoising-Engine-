@@ -29,4 +29,5 @@ EXPOSE 7860
 # Start Gunicorn WSGI server
 # NOTE: We use 1 worker and 4 threads to prevent TensorFlow from multiplying in memory,
 # which avoids out-of-memory (OOM) crashes on standard cloud hosts.
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 0 app:app
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app
+
