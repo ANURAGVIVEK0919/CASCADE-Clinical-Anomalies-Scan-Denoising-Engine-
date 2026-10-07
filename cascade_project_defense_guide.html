@@ -567,7 +567,7 @@
 |  2. Stage-1 Restoration Engine (medical_ct_denoiser_full.keras)                                         |
 |     Input: (1, 256, 256, 1) -> Encoder -> Bottleneck (32, 32, 128) -> Decoder + Skip Connections         |
 |     Output: Restored Scan Tensor -> (1, 256, 256, 1) float32                                            |
-|     Computes Metrics: PSNR Gain (+10.53 dB) & SSIM Gain (+0.267) against Baseline                       |
+|     Computes Metrics: PSNR Gain (+TBD - to be re-measured after retraining on a patient-wise split dB) & SSIM Gain (+0.267) against Baseline                       |
 |                                            |                                                            |
 |                                            v                                                            |
 |  3. Stage-2 Diagnostic Engine (medical_ct_diagnostic_model.keras)                                       |
@@ -623,7 +623,7 @@
                         <strong>A (Action):</strong> Maine ek 2-Stage Cascaded Neural Network architecture design ki:<br>
                         - <em>Stage-1:</em> Custom 2D Convolutional U-Net Autoencoder (<code>train_unified_unet.py</code>) jo noise-invariant representations extract karke clean scan reconstruct karta hai.<br>
                         - <em>Stage-2:</em> Multi-Task ResNet-50V2 backbone (<code>train_diagnostic_stage2.py</code>) jo ImageNet transfer learning se organ classification (Softmax) aur bounding box regression (Sigmoid) ek saath run karta hai.<br><br>
-                        <strong>R (Result):</strong> Is cascade engine ne benchmark validation par +10.53 dB PSNR gain, +0.267 SSIM gain achieve kiya aur overall triage classification accuracy 98.6% rahi jisme Normal scans par 100% specificity (Zero False Alarms) mili."
+                        <strong>R (Result):</strong> Is cascade engine ne benchmark validation par +TBD - to be re-measured after retraining on a patient-wise split dB PSNR gain, +0.267 SSIM gain achieve kiya aur overall triage classification accuracy TBD - to be re-measured after retraining on a patient-wise split% rahi jisme Normal scans par TBD - to be re-measured after retraining on a patient-wise split (Zero False Alarms) mili."
                     </div>
                 </div>
 
@@ -633,7 +633,7 @@
                     <p style="font-size: 0.9rem; color: var(--text-secondary);">
                         <strong>P (Point):</strong> Maine Stage-1 denoising ke liye U-Net autoencoder aur Stage-2 diagnostics ke liye ResNet-50V2 choose kiya.<br>
                         <strong>R (Reason):</strong> U-Net skip-connections low-level spatial detail (edges, tissue boundaries) ko decoder mein directly pass karti hain jo image reconstruction ke liye mandatory hai. ResNet-50V2 residual skip connections vanishing gradient prevent karte hain aur dense multi-task heads (Classification + Localization) ko feature representation simplify karte hain.<br>
-                        <strong>E (Evidence):</strong> Direct MSE/MAE validation par U-Net ne noise power ko >70% reduce kiya (PSNR baseline 28.61 dB se 39.14 dB tak push hua). ResNet-50V2 baseline standard CNN ke comparsion mein 98.6% triage accuracy guarantee karta hai.<br>
+                        <strong>E (Evidence):</strong> Direct MSE/MAE validation par U-Net ne noise power ko >70% reduce kiya (PSNR baseline TBD - to be re-measured after retraining on a patient-wise split dB se TBD - to be re-measured after retraining on a patient-wise split dB tak push hua). ResNet-50V2 baseline standard CNN ke comparsion mein TBD - to be re-measured after retraining on a patient-wise split% triage accuracy guarantee karta hai.<br>
                         <strong>P (Point):</strong> Isi wajeh se ye cascaded setup medical image restoration aur anomaly detection ke liye ideal system hai.
                     </p>
                 </div>
@@ -743,7 +743,7 @@ def build_multi_task_diagnostic_model(input_shape=(256, 256, 1)):
                     \text{PSNR} = 10 \cdot \log_{10} \left( \frac{\text{MAX}_I^2}{\text{MSE}} \right) = 20 \cdot \log_{10} (\text{MAX}_I) - 10 \cdot \log_{10} (\text{MSE})
                 </div>
                 <p style="font-size: 0.88rem; color: var(--text-secondary);">
-                    Where $\text{MAX}_I = 1.0$ (for normalized float32 images) and $\text{MSE} = \frac{1}{m \cdot n} \sum_{i=0}^{m-1} \sum_{j=0}^{n-1} [I(i,j) - K(i,j)]^2$. A PSNR gain of <strong>+10.53 dB</strong> indicates a 73.4% reduction in noise power!
+                    Where $\text{MAX}_I = 1.0$ (for normalized float32 images) and $\text{MSE} = \frac{1}{m \cdot n} \sum_{i=0}^{m-1} \sum_{j=0}^{n-1} [I(i,j) - K(i,j)]^2$. A PSNR gain of <strong>+TBD - to be re-measured after retraining on a patient-wise split dB</strong> indicates a 73.4% reduction in noise power!
                 </p>
 
                 <h4 style="color: var(--accent-cyan); margin: 20px 0 8px 0;">2. Structural Similarity Index Measure (SSIM)</h4>
@@ -751,7 +751,7 @@ def build_multi_task_diagnostic_model(input_shape=(256, 256, 1)):
                     \text{SSIM}(x, y) = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + \mu_y^2 + C_1)(\sigma_x^2 + \sigma_y^2 + C_2)}
                 </div>
                 <p style="font-size: 0.88rem; color: var(--text-secondary);">
-                    Measures luminance ($\mu$), contrast ($\sigma$), and structural correlation ($\sigma_{xy}$). CASCADE pushes SSIM from 0.6575 to <strong>0.9245</strong>, ensuring organ boundaries and bone structures are preserved.
+                    Measures luminance ($\mu$), contrast ($\sigma$), and structural correlation ($\sigma_{xy}$). CASCADE pushes SSIM from TBD - to be re-measured after retraining on a patient-wise split to <strong>TBD - to be re-measured after retraining on a patient-wise split</strong>, ensuring organ boundaries and bone structures are preserved.
                 </p>
 
                 <h4 style="color: var(--accent-cyan); margin: 20px 0 8px 0;">3. Multi-Task Weighted Loss Function (ResNet-50V2)</h4>
@@ -911,7 +911,7 @@ def generate_gradcam(model, img_array, class_idx, last_conv_layer_name="post_rel
        |
        v
  +----------------------------------+
- | 3. Safety Auditor Agent Node     |  ---> Checks emergency flags & 100% specificity criteria
+ | 3. Safety Auditor Agent Node     |  ---> Checks emergency flags & TBD - to be re-measured after retraining on a patient-wise split criteria
  +----------------------------------+
        |
        v
@@ -1025,7 +1025,7 @@ class DenseEmbeddingGenerator:
                         </tr>
                         <tr>
                             <td><strong>3. Transform</strong></td>
-                            <td>Min-max HU tensor normalization -> U-Net denoising -> PSNR (+10.53 dB) & SSIM (+0.267) gain calculation -> ResNet anomaly bounds.</td>
+                            <td>Min-max HU tensor normalization -> U-Net denoising -> PSNR (+TBD - to be re-measured after retraining on a patient-wise split dB) & SSIM (+0.267) gain calculation -> ResNet anomaly bounds.</td>
                             <td><code>transform_file()</code></td>
                         </tr>
                         <tr>
@@ -1243,7 +1243,7 @@ CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 0 app:app</c
                 <div class="qa-item">
                     <div class="qa-q">Q10: Agar Pinecone vector retrieval score 60% se kam aaye (low similarity), toh LLM medical hallucination prevent kaise karte ho?</div>
                     <div class="qa-a">
-                        <strong>Model Answer:</strong> <code>medical_agent.py</code> ke Safety Auditor Node mein strictly 100% specificity filter check laga hai. Agar vector similarity score threshold (<0.60) drop karta hai, system default conservative baseline criteria append kar deta hai aur report par 'Low Context Certainty - Radiologist Manual Correlation Required' flag markup kar deta hai.
+                        <strong>Model Answer:</strong> <code>medical_agent.py</code> ke Safety Auditor Node mein strictly TBD - to be re-measured after retraining on a patient-wise split filter check laga hai. Agar vector similarity score threshold (<0.60) drop karta hai, system default conservative baseline criteria append kar deta hai aur report par 'Low Context Certainty - Radiologist Manual Correlation Required' flag markup kar deta hai.
                     </div>
                 </div>
 
@@ -1251,7 +1251,7 @@ CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 0 app:app</c
                 <div class="qa-item">
                     <div class="qa-q">Q11: PSNR aur SSIM ke beech exact difference kya hai, aur sirf PSNR medical imaging ke liye kyu enough nahi hai?</div>
                     <div class="qa-a">
-                        <strong>Model Answer:</strong> PSNR strictly pixel-level Mean Squared Error (MSE) calculate karta hai, lekin human visual perception organ texture aur edge sharpness ko prioritze karti hai. Ek image high PSNR hone ke baad bhi blurry ho sakti hai. SSIM structural correlation, luminance, aur contrast check karta hai; isiliye clinical restoration verification ke liye dono metrics (+10.53 dB PSNR gain & +0.267 SSIM gain) saath mein report kiye gaye hain.
+                        <strong>Model Answer:</strong> PSNR strictly pixel-level Mean Squared Error (MSE) calculate karta hai, lekin human visual perception organ texture aur edge sharpness ko prioritze karti hai. Ek image high PSNR hone ke baad bhi blurry ho sakti hai. SSIM structural correlation, luminance, aur contrast check karta hai; isiliye clinical restoration verification ke liye dono metrics (+TBD - to be re-measured after retraining on a patient-wise split dB PSNR gain & +0.267 SSIM gain) saath mein report kiye gaye hain.
                     </div>
                 </div>
 

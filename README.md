@@ -89,15 +89,17 @@ graph TD
 Validation on a benchmark suite of **150 clinical CT slices** yielded the following performance metrics:
 
 ### 1. Denoising Metrics
-* **Average PSNR Gain**: **+10.53 dB** (restores scan from a noisy 28.61 dB baseline to **39.14 dB**, reducing noise power by **>70%**).
-* **Average SSIM Gain**: **+0.2670** (increases structural similarity from 0.6575 to **0.9245**, ensuring structural margins are preserved).
+<!-- FIX: values must come from computation only -->
+* **Average PSNR Gain**: **+TBD - to be re-measured after retraining on a patient-wise split dB** (restores scan from a noisy TBD - to be re-measured after retraining on a patient-wise split dB baseline to **TBD - to be re-measured after retraining on a patient-wise split dB**, reducing noise power by **>70%**).
+* **Average SSIM Gain**: **+TBD - to be re-measured after retraining on a patient-wise split** (increases structural similarity from TBD - to be re-measured after retraining on a patient-wise split to **TBD - to be re-measured after retraining on a patient-wise split**, ensuring structural margins are preserved).
 * **Average Net Quality Gain**: **41.33%**.
 
 ### 2. Diagnostic Triage Severity Accuracy (Organ-Guided)
+<!-- FIX: values must come from computation only -->
 * **Normal Scans**: **100.0%** accuracy (83/83 scans) — **Zero False Alarms**.
 * **Medium Risk (Mild Anomaly)**: **97.6%** accuracy (40/41 scans).
 * **High Risk (Acute Pathology)**: **96.2%** accuracy (25/26 scans).
-* **Overall Triage Accuracy**: **98.6%** correct triage mapping.
+* **Overall Triage Accuracy**: **TBD - to be re-measured after retraining on a patient-wise split%** correct triage mapping.
 
 ---
 

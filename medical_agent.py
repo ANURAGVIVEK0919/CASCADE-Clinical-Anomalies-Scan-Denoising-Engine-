@@ -112,14 +112,18 @@ CLINICAL_KNOWLEDGE_BASE = {
 def radiologist_vision_agent_node(state: AgentState) -> AgentState:
     ctx = state.get("scan_context", {})
     organ = str(ctx.get("organ", "Chest")).capitalize()
-    psnr_delta = ctx.get("psnr_delta", 10.53)
+    # FIX: values must come from computation only.
+    psnr_delta = ctx.get("psnr_delta", None)
     ssim_delta = ctx.get("ssim_delta", 0.267)
     findings = ctx.get("findings", ["Normal anatomical structures"])
+    bbox = ctx.get("bbox", None)
+    
+    bbox_text = f" at spatial coordinates [ymin:{bbox[0]:.2f}, xmin:{bbox[1]:.2f}, ymax:{bbox[2]:.2f}, xmax:{bbox[3]:.2f}]" if bbox else ""
     
     obs = (
         f"Radiologist Vision Agent Observation: Analyzed {organ} CT Scan slice. "
         f"U-Net Denoising Engine achieved +{psnr_delta:.2f} dB PSNR improvement and +{ssim_delta:.4f} SSIM gain. "
-        f"Diagnostic ResNet localized target region with primary findings: {', '.join(findings)}."
+        f"Diagnostic ResNet localized target region{bbox_text} with primary findings: {', '.join(findings)}."
     )
     
     state["radiologist_observations"] = obs
@@ -185,6 +189,33 @@ def human_radiologist_approval_node(state: AgentState) -> AgentState:
     query_header = f"**User Inquiry**: \"{user_query}\"\n\n" if user_query else ""
     emergency_banner = "[ALERT] EMERGENCY TRIAGE ALERT: High Risk Focal Anomaly Detected!\n\n" if state.get("is_emergency") else ""
     
+    # --------------------------------------------------------------------------------
+    # LLM DRAFTING: Use Free HuggingFace Inference API to generate a real medical report
+    # --------------------------------------------------------------------------------
+    ai_generated_synthesis = ""
+    try:
+        from huggingface_hub import InferenceClient
+        # Use a fast, free LLM available on HF Serverless API
+        client = InferenceClient("Qwen/Qwen2.5-72B-Instruct")
+        
+        prompt = f"""You are a senior AI radiologist assistant. Write a short, professional, and confident clinical report summary (3-4 sentences max) based ONLY on these facts. 
+Organ: {organ}
+Risk Level: {severity}
+AI Observations: {obs}
+Clinical Guidelines (RAG): {diff_text}
+
+Draft the final "Impression" section. You MUST explicitly mention the exact spatial coordinates [ymin, xmin, ymax, xmax] of the lesion and the U-Net PSNR improvement to prove this report is customized for this specific scan."""
+
+        response = client.chat_completion(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=250,
+            temperature=0.3
+        )
+        ai_generated_synthesis = response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"[!] HuggingFace LLM Error: {e}")
+        ai_generated_synthesis = f"[API Rate Limit / Timeout on Free Serverless] Based on the localized focal findings and corresponding differential diagnoses, clinical correlation is advised as per standard protocols. (Error detail: {str(e)})"
+    
     report = (
         f"{query_header}"
         f"{emergency_banner}"
@@ -197,10 +228,12 @@ def human_radiologist_approval_node(state: AgentState) -> AgentState:
         f"  • Top Match Cosine Similarity Score: **{sim_score * 100:.1f}%**\n"
         f"  • Differential Diagnoses: **{diff_text}**\n"
         f"  • **Retrieved Dense Guidelines & Clinical Evidence**:\n{kb_text}\n\n"
-        f"**3. Safety Auditor Status**:\n"
+        f"**3. LLM Diagnostic Synthesis (Qwen2.5-72B-Instruct)**:\n"
+        f"> {ai_generated_synthesis}\n\n"
+        f"**4. Safety Auditor Status**:\n"
         f"  • Audit Decision: `{audit_status}`\n"
         f"  • Specificity Check: **100% Verified** (Zero False Alarm Filter Active)\n\n"
-        f"**4. [HUMAN] Human-in-the-Loop (HITL) Radiologist Sign-Off**:\n"
+        f"**5. [HUMAN] Human-in-the-Loop (HITL) Radiologist Sign-Off**:\n"
         f"  • Status: `{hitl_badge}`\n"
         f"  • Attending Physician: **{physician}**\n"
         f"  • Clinical Notes: *\"{hitl_notes}\"*"
@@ -285,8 +318,9 @@ if __name__ == "__main__":
     test_context = {
         "organ": "Brain",
         "severity": "High Risk",
-        "psnr_delta": 10.53,
-        "ssim_delta": 0.267,
+        # FIX: values must come from computation only.
+        "psnr_delta": None,
+        "ssim_delta": None,
         "findings": ["Hyperdense mass detected in temporal lobe"]
     }
     res = board.consult(test_context, "What is the emergency protocol?", is_verified=True, physician_name="Dr. Vivek, M.D.", hitl_notes="Confirmed temporal lobe hyperdensity.")

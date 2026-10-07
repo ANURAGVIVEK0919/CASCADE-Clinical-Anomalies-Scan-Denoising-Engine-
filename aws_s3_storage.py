@@ -233,7 +233,7 @@ class AWSCloudServicesManager:
         self.ec2_server = EC2ServerManager()
         self.cw_logger = CloudWatchLogger()
 
-    def process_cloud_pacs_event(self, local_filepath: str, patient_id: str, organ: str, severity: str) -> Dict[str, Any]:
+    def process_cloud_pacs_event(self, local_filepath: str, patient_id: str, organ: str, severity: str, psnr_gain: Optional[float] = None) -> Dict[str, Any]:
         # 1. AWS S3 Upload
         s3_res = self.s3_vault.upload_file(local_filepath)
         s3_uri = s3_res.get("s3_uri", "s3://cascade-pacs-cloud-archive/scan.png")
@@ -242,7 +242,9 @@ class AWSCloudServicesManager:
         ec2_res = self.ec2_server.get_server_metadata()
         
         # 3. AWS CloudWatch System Log
-        log_msg = f"CLINICAL_EVENT: Patient={patient_id} Organ={organ} Severity={severity} S3_URI={s3_uri} PSNR_Gain=+10.53dB"
+        # FIX: values must come from computation only. Omit field if not available.
+        psnr_str = f" PSNR_Gain=+{psnr_gain:.2f}dB" if psnr_gain is not None else ""
+        log_msg = f"CLINICAL_EVENT: Patient={patient_id} Organ={organ} Severity={severity} S3_URI={s3_uri}{psnr_str}"
         cw_res = self.cw_logger.log_event(log_msg)
         
         return {
@@ -266,5 +268,5 @@ class AWSCloudServicesManager:
 if __name__ == "__main__":
     aws_mgr = AWSCloudServicesManager()
     print("CASCADE Option 2 AWS Services Manager Status:")
-    res = aws_mgr.process_cloud_pacs_event("data/raw_scans/sample_ct_scan_001.png", "ACC-984210", "Brain", "High Risk")
+    res = aws_mgr.process_cloud_pacs_event("data/raw_scans/sample_ct_scan_001.png", "ACC-984210", "Brain", "High Risk", psnr_gain=None)
     print(json.dumps(res, indent=2))

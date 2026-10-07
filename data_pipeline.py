@@ -5,7 +5,7 @@ This module implements an enterprise-grade Extract, Transform, Load (ETL) pipeli
 1. Extract Stage: Discovers incoming DICOM (.dcm) files or standard images.
 2. HIPAA PII De-Identification: Anonymizes Patient Name and SSN while retaining clinical parameters.
 3. Transform Stage: Normalizes Hounsfield Units (HU), resizes images, executes U-Net denoising,
-   computes PSNR (+10.53 dB) & SSIM (+0.267) gains, and runs ResNet multi-task anomaly localization.
+   computes PSNR & SSIM gains, and runs ResNet multi-task anomaly localization.
 4. Load Stage: Exports transformed artifacts and structured JSON metadata to the Data Lake directory.
 """
 
@@ -115,11 +115,11 @@ class CASCADEDICOMPipeline:
         denoised_arr = np.clip((smoothed - 0.05) * 1.05 + 0.05, 0.0, 1.0)
         diff_arr = np.abs(img_arr - denoised_arr)
         
-        # Compute Quantitative Performance Gains
-        psnr_baseline = 28.61
-        psnr_restored = 39.14
-        psnr_gain = 10.53
-        ssim_gain = 0.267
+        # FIX: values must come from computation only. Removed hardcoded fallbacks.
+        psnr_baseline = None
+        psnr_restored = None
+        psnr_gain = None
+        ssim_gain = None
         
         mean_val = float(np.mean(denoised_arr))
         severity = "High Risk" if mean_val > 0.45 else ("Mild Anomaly" if mean_val > 0.25 else "Normal")
@@ -144,7 +144,7 @@ class CASCADEDICOMPipeline:
                 "psnr_restored_db": psnr_restored,
                 "psnr_gain_db": psnr_gain,
                 "ssim_gain": ssim_gain,
-                "noise_reduction_pct": 73.4
+                "noise_reduction_pct": None
             },
             "triage_severity": severity,
             "agentic_ai_consultation": agent_res

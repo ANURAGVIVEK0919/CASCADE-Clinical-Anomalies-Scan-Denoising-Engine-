@@ -1,5 +1,5 @@
 # Use an official lightweight Python runtime
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set environment variables
 # Prevents Python from writing pyc files to disc

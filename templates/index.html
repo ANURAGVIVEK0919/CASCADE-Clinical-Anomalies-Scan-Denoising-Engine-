@@ -1389,6 +1389,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             // Bind organ dropdown change
             const organSelect = item.querySelector('.organ-selector');
             if (organSelect) {
+                file.organ = organSelect.value;
                 organSelect.onchange = (e) => {
                     file.organ = e.target.value;
                 };
@@ -1660,18 +1661,21 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
 
 
                         <div class="metrics-grid">
+                            <!-- FIX: values must come from computation only, handling null gracefully -->
                             <div class="metric-mini-card">
-                                <div class="metric-mini-val">${res.metrics.psnr_restored.toFixed(2)} dB</div>
-                                <div style="font-size: 0.75rem; color: var(--normal); font-weight: 700; margin-bottom: 0.2rem;">+${res.metrics.psnr_delta.toFixed(2)} dB Delta</div>
-                                <div class="metric-mini-label">PSNR (Noisy: ${res.metrics.psnr_noisy.toFixed(1)} dB)</div>
+                                <div class="metric-mini-val">${res.metrics.psnr_restored !== null ? res.metrics.psnr_restored.toFixed(2) + ' dB' : 'N/A (no reference scan)'}</div>
+                                <div style="font-size: 0.75rem; color: var(--normal); font-weight: 700; margin-bottom: 0.2rem;">${res.metrics.psnr_delta !== null ? '+' + res.metrics.psnr_delta.toFixed(2) + ' dB Delta' : 'N/A'}</div>
+                                <div class="metric-mini-label">PSNR (Noisy: ${res.metrics.psnr_noisy !== null ? res.metrics.psnr_noisy.toFixed(1) + ' dB' : 'N/A'})</div>
                             </div>
+                            <!-- FIX: values must come from computation only, handling null gracefully -->
                             <div class="metric-mini-card">
-                                <div class="metric-mini-val">${res.metrics.ssim_restored.toFixed(3)}</div>
-                                <div style="font-size: 0.75rem; color: var(--normal); font-weight: 700; margin-bottom: 0.2rem;">+${res.metrics.ssim_delta.toFixed(3)} Delta</div>
-                                <div class="metric-mini-label">SSIM (Noisy: ${res.metrics.ssim_noisy.toFixed(2)})</div>
+                                <div class="metric-mini-val">${res.metrics.ssim_restored !== null ? res.metrics.ssim_restored.toFixed(3) : 'N/A (no reference scan)'}</div>
+                                <div style="font-size: 0.75rem; color: var(--normal); font-weight: 700; margin-bottom: 0.2rem;">${res.metrics.ssim_delta !== null ? '+' + res.metrics.ssim_delta.toFixed(3) + ' Delta' : 'N/A'}</div>
+                                <div class="metric-mini-label">SSIM (Noisy: ${res.metrics.ssim_noisy !== null ? res.metrics.ssim_noisy.toFixed(2) : 'N/A'})</div>
                             </div>
+                            <!-- FIX: values must come from computation only, handling null gracefully -->
                             <div class="metric-mini-card">
-                                <div class="metric-mini-val" style="color: var(--normal);">${res.metrics.improvement.toFixed(1)}%</div>
+                                <div class="metric-mini-val" style="color: var(--normal);">${res.metrics.improvement !== null ? res.metrics.improvement.toFixed(1) + '%' : 'N/A'}</div>
                                 <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; margin-bottom: 0.2rem;">Signal Gain</div>
                                 <div class="metric-mini-label">Net Improvement</div>
                             </div>
@@ -1692,19 +1696,21 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        <!-- FIX: values must come from computation only, handling null gracefully -->
                                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                                             <td style="padding: 0.6rem 0; font-weight: 600;">Peak Signal-to-Noise Ratio (PSNR)</td>
-                                            <td style="padding: 0.6rem; text-align: center; color: var(--color-text-secondary);">${res.metrics.psnr_noisy.toFixed(2)} dB</td>
-                                            <td style="padding: 0.6rem; text-align: center; font-weight: 700;">${res.metrics.psnr_restored.toFixed(2)} dB</td>
-                                            <td style="padding: 0.6rem; text-align: center; color: var(--normal); font-weight: 700;">+${res.metrics.psnr_delta.toFixed(2)} dB</td>
-                                            <td style="padding: 0.6rem; text-align: right; color: var(--primary); font-weight: 700;">${res.metrics.improvement.toFixed(1)}%</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--color-text-secondary);">${res.metrics.psnr_noisy !== null ? res.metrics.psnr_noisy.toFixed(2) + ' dB' : 'N/A'}</td>
+                                            <td style="padding: 0.6rem; text-align: center; font-weight: 700;">${res.metrics.psnr_restored !== null ? res.metrics.psnr_restored.toFixed(2) + ' dB' : 'N/A (no reference scan)'}</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--normal); font-weight: 700;">${res.metrics.psnr_delta !== null ? '+' + res.metrics.psnr_delta.toFixed(2) + ' dB' : 'N/A'}</td>
+                                            <td style="padding: 0.6rem; text-align: right; color: var(--primary); font-weight: 700;">${res.metrics.improvement !== null ? res.metrics.improvement.toFixed(1) + '%' : 'N/A'}</td>
                                         </tr>
+                                        <!-- FIX: values must come from computation only, handling null gracefully -->
                                         <tr>
                                             <td style="padding: 0.6rem 0; font-weight: 600;">Structural Similarity Index (SSIM)</td>
-                                            <td style="padding: 0.6rem; text-align: center; color: var(--color-text-secondary);">${res.metrics.ssim_noisy.toFixed(3)}</td>
-                                            <td style="padding: 0.6rem; text-align: center; font-weight: 700;">${res.metrics.ssim_restored.toFixed(3)}</td>
-                                            <td style="padding: 0.6rem; text-align: center; color: var(--normal); font-weight: 700;">+${res.metrics.ssim_delta.toFixed(3)}</td>
-                                            <td style="padding: 0.6rem; text-align: right; color: var(--primary); font-weight: 700;">${((res.metrics.ssim_delta / Math.max(1e-5, res.metrics.ssim_noisy)) * 100).toFixed(1)}%</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--color-text-secondary);">${res.metrics.ssim_noisy !== null ? res.metrics.ssim_noisy.toFixed(3) : 'N/A'}</td>
+                                            <td style="padding: 0.6rem; text-align: center; font-weight: 700;">${res.metrics.ssim_restored !== null ? res.metrics.ssim_restored.toFixed(3) : 'N/A (no reference scan)'}</td>
+                                            <td style="padding: 0.6rem; text-align: center; color: var(--normal); font-weight: 700;">${res.metrics.ssim_delta !== null ? '+' + res.metrics.ssim_delta.toFixed(3) : 'N/A'}</td>
+                                            <td style="padding: 0.6rem; text-align: right; color: var(--primary); font-weight: 700;">${(res.metrics.ssim_delta !== null && res.metrics.ssim_noisy !== null) ? ((res.metrics.ssim_delta / Math.max(1e-5, res.metrics.ssim_noisy)) * 100).toFixed(1) + '%' : 'N/A'}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1893,7 +1899,8 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             body: JSON.stringify({
                                 physician_name: doctorName,
                                 hitl_notes: 'Verified AI reconstructed clean scan, Hounsfield attenuation, and anomaly BBox overlay.',
-                                scan_context: { organ: 'Brain', severity: 'High Risk', psnr_delta: 10.53, ssim_delta: 0.267, findings: ['Confirmed by attending physician'] }
+                                // FIX: values must come from computation only.
+                                scan_context: { organ: 'Brain', severity: 'High Risk', psnr_delta: null, ssim_delta: null, findings: ['Confirmed by attending physician'] }
                             })
                         });
                         const data = await res.json();
@@ -1950,8 +1957,9 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                                 scan_context: {
                                     organ: typeof selectedOrgan !== 'undefined' ? selectedOrgan : 'Brain',
                                     severity: 'High Risk',
-                                    psnr_delta: 10.53,
-                                    ssim_delta: 0.267,
+                                    // FIX: values must come from computation only.
+                                    psnr_delta: null,
+                                    ssim_delta: null,
                                     findings: ['Hyperdense tissue anomaly confirmed by attending physician']
                                 }
                             })
@@ -1975,8 +1983,9 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             scan_context: {
                                 organ: typeof selectedOrgan !== 'undefined' ? selectedOrgan : 'Brain',
                                 severity: 'High Risk',
-                                psnr_delta: 10.53,
-                                ssim_delta: 0.267,
+                                // FIX: values must come from computation only.
+                                psnr_delta: null,
+                                ssim_delta: null,
                                 findings: ['Hyperdense tissue anomaly identified']
                             }
                         })
