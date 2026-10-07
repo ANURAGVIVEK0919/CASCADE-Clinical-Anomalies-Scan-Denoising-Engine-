@@ -7,7 +7,9 @@ def deploy():
         folder_path=".",
         repo_id="ANURAG1909/cascade-denoising-engine",
         repo_type="space",
-        ignore_patterns=["*.git*", "*__pycache__*", "*venv*", "*.env*", "deploy_hf.py"]
+        ignore_patterns=["*.git*","*__pycache__*","*venv*","*.env*","deploy_hf.py","data/*",
+                         "data.zip","*.zip","output/*","*.db","*.keras","*.h5",
+                         "CLEANUP_LOG.md","requirements.old.txt","AUDIT*.md"]
     )
     print("Upload complete!")
 
