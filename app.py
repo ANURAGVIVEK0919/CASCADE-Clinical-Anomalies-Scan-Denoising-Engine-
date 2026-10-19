@@ -15,7 +15,8 @@ from gradcam_utils import generate_gradcam, overlay_gradcam
 from medical_agent import ASCADEMedicalBoard
 from data_pipeline import CASCADEDICOMPipeline
 from aws_s3_storage import S3StorageVault, AWSCloudServicesManager
-from telemetry import get_telemetry
+from telemetry import get_telemetry, sanitize_value
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -140,6 +141,7 @@ def process_image(image_path, clean_path=None):
     # Denoise
     m = get_model()
     denoised_img = None
+    denoiser_engine = "CASCADE U-Net Neural Denoiser"
 
     if m is not None:
         try:
@@ -151,8 +153,8 @@ def process_image(image_path, clean_path=None):
             m = None
 
     if m is None or denoised_img is None:
-        # Fallback NumPy local smoothing box-filter to simulate high-fidelity denoising
-        # This keeps the app 100% operational even without downloading Git LFS weights
+        # Fallback NumPy local smoothing box-filter - explicitly labeled as classical baseline
+        denoiser_engine = "Classical 3x3 Smoothing Baseline (Classical Fallback)"
         smoothed = np.copy(img_array)
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
@@ -178,6 +180,7 @@ def process_image(image_path, clean_path=None):
     if not clean_found:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         clean_dirs = [
+            os.path.join(base_dir, "data", "processed", "deeplesion_localization", "clean"),
             os.path.join(base_dir, "data", "unified_dataset", "clean"),
             os.path.join(base_dir, "data", "separated_scans")
         ]
@@ -261,7 +264,8 @@ def process_image(image_path, clean_path=None):
         'ssim_noisy': ssim_noisy,
         'ssim_restored': ssim_restored,
         'ssim_delta': ssim_delta,
-        'improvement': improvement_pct
+        'improvement': improvement_pct,
+        'denoiser_engine': denoiser_engine
     }, patient_metadata
 
 def run_diagnostic_analyzer(img_array, organ_type, bbox=None, predicted_organ=None, filename=None):
@@ -520,6 +524,9 @@ def process():
 
             results.append({
                 'name': file.filename,
+                'pipeline': 'legacy_image_pipeline',
+                'model_version': 'Legacy U-Net (medical_ct_denoiser_full.keras)' if get_model() is not None else 'Classical Fallback Baseline',
+                'is_research_model': False,
                 'organ': organ.capitalize(),
                 'predicted_organ': predicted_organ.capitalize() if predicted_organ else organ.capitalize(),
                 'organ_agreement': organ_agreement,
@@ -540,6 +547,7 @@ def process():
                 'etl_summary': etl_summary,
                 'aws_cloud_res': aws_cloud_res
             })
+
         finally:
             # Clean up
             if os.path.exists(filepath):
@@ -802,22 +810,180 @@ def s3_upload_api():
 
     return jsonify(result)
 
+MAX_DICOM_UPLOAD_SIZE = 32 * 1024 * 1024  # 32 MB limit per file
+
+@app.route('/api/research/denoise_dicom', methods=['POST'])
+def research_denoise_dicom_api():
+    """
+    Dedicated Research Inference Endpoint for Calibrated CT DICOM Slices (Residual U-Net v3).
+
+    Accepts:
+      - 'dicom_scan': Multipart file upload of a calibrated 2D CT DICOM slice (max 32 MB).
+      - 'reference_scan': (Optional) Multipart file upload of matched routine-dose CT DICOM.
+      - 'window': (Optional) Form field specifying clinical display window:
+                  'soft_tissue' (default), 'lung', 'bone', 'full_body'.
+
+    Strict Safety & Hardening Policy:
+      - Enforces 32 MB upload limit (HTTP 413 on payload too large).
+      - Rejects empty, corrupt, multiframe, or non-CT inputs (HTTP 400).
+      - Ordinary 8-bit images (PNG, JPEG, BMP) strictly rejected (HTTP 400).
+      - Zero persistent scan storage; strictly in-memory processing.
+      - Controlled error messages without server path or stack trace leakage.
+      - Output is explicitly marked as PRELIMINARY_RESEARCH_CANDIDATE (not for clinical use).
+    """
+    from research_inference import (
+        denoise_dicom_research,
+        record_research_request,
+        verify_checkpoint_integrity
+    )
+
+    t_start = time.time()
+
+    # Bounded content length check
+    if request.content_length and request.content_length > MAX_DICOM_UPLOAD_SIZE * 2:
+        record_research_request(success=False, duration_ms=0.0, status="PAYLOAD_TOO_LARGE")
+        return jsonify({
+            'status': 'REJECTED',
+            'error': 'Upload payload exceeds maximum allowable limit of 32 MB.'
+        }), 413
+
+    if 'dicom_scan' not in request.files:
+        record_research_request(success=False, duration_ms=0.0, status="MISSING_FILE")
+        return jsonify({
+            'status': 'REJECTED',
+            'error': 'Missing required file field: dicom_scan. A calibrated CT DICOM slice is required.'
+        }), 400
+
+    file = request.files['dicom_scan']
+    if not file or file.filename == '':
+        record_research_request(success=False, duration_ms=0.0, status="EMPTY_FILE")
+        return jsonify({
+            'status': 'REJECTED',
+            'error': 'Empty file provided for dicom_scan.'
+        }), 400
+
+    fname_lower = file.filename.lower()
+    if fname_lower.endswith('.png') or fname_lower.endswith('.jpg') or fname_lower.endswith('.jpeg') or fname_lower.endswith('.bmp'):
+        record_research_request(success=False, duration_ms=0.0, status="UNSUPPORTED_FORMAT")
+        return jsonify({
+            'status': 'REJECTED',
+            'error': (
+                f"Unsupported file format. Ordinary 8-bit images lack physical "
+                "Hounsfield calibration metadata and are rejected. Residual U-Net v3 requires genuine CT DICOM."
+            )
+        }), 400
+
+    # Bounded stream read to prevent memory exhaustion
+    scan_bytes = file.read(MAX_DICOM_UPLOAD_SIZE + 1024)
+    if len(scan_bytes) > MAX_DICOM_UPLOAD_SIZE:
+        record_research_request(success=False, duration_ms=0.0, status="FILE_TOO_LARGE")
+        return jsonify({
+            'status': 'REJECTED',
+            'error': 'Uploaded DICOM file exceeds maximum allowable limit of 32 MB.'
+        }), 413
+
+    if len(scan_bytes) == 0:
+        record_research_request(success=False, duration_ms=0.0, status="EMPTY_FILE")
+        return jsonify({
+            'status': 'REJECTED',
+            'error': 'Empty file provided for dicom_scan.'
+        }), 400
+
+    window_mode = request.form.get('window', 'soft_tissue').lower()
+
+    ref_file = request.files.get('reference_scan')
+    ref_bytes = None
+    if ref_file and ref_file.filename != '':
+        ref_bytes = ref_file.read(MAX_DICOM_UPLOAD_SIZE + 1024)
+        if len(ref_bytes) > MAX_DICOM_UPLOAD_SIZE:
+            record_research_request(success=False, duration_ms=0.0, status="REFERENCE_TOO_LARGE")
+            return jsonify({
+                'status': 'REJECTED',
+                'error': 'Uploaded reference DICOM file exceeds maximum allowable limit of 32 MB.'
+            }), 413
+
+    try:
+        result = denoise_dicom_research(
+            input_source=scan_bytes,
+            reference_source=ref_bytes,
+            window_mode=window_mode
+        )
+        duration_ms = (time.time() - t_start) * 1000.0
+        record_research_request(success=True, duration_ms=duration_ms, status="SUCCESS")
+        return jsonify(result), 200
+    except ValueError as ve:
+        duration_ms = (time.time() - t_start) * 1000.0
+        record_research_request(success=False, duration_ms=duration_ms, status="VALIDATION_REJECTED")
+        sanitized_msg = sanitize_value(str(ve))
+        return jsonify({
+            'status': 'REJECTED',
+            'error': sanitized_msg
+        }), 400
+    except Exception as e:
+        duration_ms = (time.time() - t_start) * 1000.0
+        record_research_request(success=False, duration_ms=duration_ms, status="ERROR")
+        corr_id = telemetry.new_correlation_id()
+        telemetry.finish_trace(corr_id, final_status="FAILED", error_category="MODEL_INFERENCE_ERROR")
+        return jsonify({
+            'status': 'ERROR',
+            'error': 'Internal processing error during research inference.',
+            'trace_id': corr_id
+        }), 500
+
 @app.route('/metrics', methods=['GET'])
 def metrics_api():
     """
     Prometheus & System Health Monitoring Observability Endpoint.
+    Exposes distinct telemetry for the legacy image pipeline and research DICOM pipeline.
     """
-    s3_status = s3_vault.get_vault_status()
+    s3_status = "Connected" if getattr(s3_vault, 'is_connected', False) else "Local Offline Vault"
+
+    from research_inference import (
+        V3_CHECKPOINT_PATH,
+        EXPECTED_V3_SHA256,
+        verify_checkpoint_integrity,
+        get_research_telemetry
+    )
+
+    v3_available = verify_checkpoint_integrity()
+    research_telemetry = get_research_telemetry()
+
     metrics = {
         "status": "Healthy",
         "service": "CASCADE Clinical Anomalies & Scan Denoising Engine",
+        "deployment_environment": "LOCAL_DEVELOPMENT (Local Workstation Only / Not Externally Deployed)",
         "uptime_sec": time.time(),
+        "pipelines": {
+            "legacy_image_pipeline": {
+                "model_id": "medical_ct_denoiser_full.keras",
+                "task": "256x256 8-bit Image / PNG Denoising (Legacy Web)",
+                "status": "Loaded" if model is not None else "Fallback Active",
+                "weights_available": os.path.exists(MODEL_PATH)
+            },
+            "diagnostic_localization_pipeline": {
+                "model_id": "medical_ct_diagnostic_model.keras",
+                "task": "ResNet50V2 Region of Interest Candidate Classification",
+                "status": "Loaded" if diagnostic_model is not None else "Fallback Active",
+                "weights_available": os.path.exists(DIAGNOSTIC_MODEL_PATH)
+            },
+            "research_dicom_pipeline": {
+                "model_id": "candidate_unet_residual_edge_v3.keras",
+                "checkpoint_path": "artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras",
+                "checkpoint_sha256": EXPECTED_V3_SHA256,
+                "task": "Native 512x512 Calibrated CT DICOM Denoising",
+                "status": "Available" if v3_available else "Offline",
+                "weights_available": os.path.exists(V3_CHECKPOINT_PATH),
+                "research_classification": "PRELIMINARY_RESEARCH_CANDIDATE",
+                "endpoint": "/api/research/denoise_dicom"
+            }
+        },
         "models": {
             "u_net_denoiser": "Loaded" if model is not None else "Fallback Active",
-            "resnet50v2_diagnostic": "Loaded" if diagnostic_model is not None else "Fallback Active"
+            "resnet50v2_diagnostic": "Loaded" if diagnostic_model is not None else "Fallback Active",
+            "residual_unet_v3_candidate": "Available" if v3_available else "Offline"
         },
+        "research_telemetry": research_telemetry,
         "performance_benchmarks": {
-            # FIX: values must come from computation only.
             "avg_psnr_gain_db": None,
             "avg_ssim_gain": None,
             "triage_accuracy_pct": None,
@@ -827,6 +993,8 @@ def metrics_api():
         "langgraph_multi_agent": "Active"
     }
     return jsonify(metrics)
+
+
 
 if __name__ == '__main__':
 

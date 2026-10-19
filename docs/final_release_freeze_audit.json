@@ -1,0 +1,213 @@
+{
+  "audit_metadata": {
+    "title": "CASCADE Final Release Freeze, Acceptance Criteria & Privacy Consistency Audit",
+    "timestamp": "2026-10-20T03:07:45Z",
+    "project_path": "D:\\CASCADE-Clinical-Anomalies-Scan-Denoising-Engine-",
+    "branch": "feat/model-rag-quality",
+    "checkpoint": "artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras",
+    "expected_checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "verified_checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "sha256_match": true,
+    "evaluated_cohort": ["L179", "L210", "L057"],
+    "total_evaluated_slices": 441
+  },
+  "status_classification": {
+    "preliminary_research_status": "PRELIMINARY_RESEARCH_ACCEPTED",
+    "release_documentation_status": "RELEASE_DOCUMENTATION_PASS",
+    "clinical_validation_status": "CLINICAL_VALIDATION_NOT_ESTABLISHED",
+    "overall_release_status": "FROZEN_RESEARCH_PROTOTYPE_NOT_FOR_CLINICAL_USE"
+  },
+  "gate_1_acceptance_criteria_provenance": {
+    "verdict": "PASS_WITH_PROVENANCE_QUALIFICATION",
+    "findings": "Audit resolved the provenance discrepancy between the prespecified criteria and the later reported 20% reduction threshold. The executable test protocol evaluate_residual_unet_v3.py (lines 14, 225) and evaluate_residual_unet_native.py (line 24) encoded 'Soft-Tissue MAE <= 10.0 HU AND improvement >= 0.50 HU'. The >= 20% MAE reduction requirement was introduced post-hoc in unet_residual_v3_final_acceptance_audit.md/json after observing a 35.39% reduction. While the candidate mathematically exceeds both requirements (8.89 HU vs 13.76 HU raw, a 4.87 HU or 35.39% reduction), the 20% threshold is formally flagged THRESHOLD_PROVENANCE_UNVERIFIED.",
+    "criteria_audit": {
+      "criterion_1_prespecified": {
+        "rule": "Soft-Tissue MAE <= 10.0 HU and improvement >= 0.50 HU over raw low-dose CT",
+        "provenance_evidence": "Found in evaluate_residual_unet_v3.py lines 14 & 225, unet_residual_v3_edge_audit.json line 106, and evaluate_residual_unet_native.py line 24.",
+        "provenance_status": "PRESPECIFIED_AND_VERIFIED",
+        "measured_raw_hu": 13.76,
+        "measured_v3_hu": 8.89,
+        "measured_improvement_hu": 4.87,
+        "status": "PASS"
+      },
+      "criterion_1_retrospective_variant": {
+        "rule": "Soft-Tissue MAE reduction >= 20% relative to raw low-dose CT",
+        "provenance_evidence": "Introduced in unet_residual_v3_final_acceptance_audit.md table after test execution. No pre-test configuration, commit, or executable test script specified this rule.",
+        "provenance_status": "THRESHOLD_PROVENANCE_UNVERIFIED",
+        "measured_reduction_pct": 35.39,
+        "status": "MATHEMATICALLY_MET_BUT_PROVENANCE_UNVERIFIED"
+      },
+      "criterion_2_structural_integrity": {
+        "rule": "SSIM >= 0.9000 and degradation >= -0.015 relative to raw low-dose CT",
+        "provenance_evidence": "Found in evaluate_residual_unet_v3.py lines 15 & 226 and unet_residual_v3_edge_audit.json line 113.",
+        "provenance_status": "PRESPECIFIED_AND_VERIFIED",
+        "measured_raw_ssim": 0.9641,
+        "measured_v3_ssim": 0.9857,
+        "measured_delta_ssim": 0.0216,
+        "status": "PASS"
+      },
+      "criterion_3_edge_preservation": {
+        "rule": "Vector Gradient Error <= Raw Low-Dose Vector Gradient Error",
+        "provenance_evidence": "Found in evaluate_residual_unet_v3.py lines 16 & 227 and unet_residual_v3_edge_audit.json line 120.",
+        "provenance_status": "PRESPECIFIED_AND_VERIFIED",
+        "measured_raw_vec_grad": 93.37,
+        "measured_v3_vec_grad": 74.39,
+        "measured_reduction_pct": 20.33,
+        "status": "PASS"
+      }
+    }
+  },
+  "gate_2_psnr_and_metric_aggregation": {
+    "verdict": "PASS",
+    "psnr_variants_documentation": {
+      "consistent_soft_tissue_psnr": {
+        "definition": "PSNR evaluated strictly on soft-tissue voxels [-160, +240] HU using dynamic range MAX_I = 400.0 HU.",
+        "formula": "20.0 * log10(400.0 / RMSE_ST)",
+        "mask": "Soft-tissue voxels ([-160, +240] HU) within patient body contour (HU > -500)",
+        "clipping_policy": "Predictions clamped to [-1000.0, +1000.0] HU",
+        "raw_low_dose_db": 27.25,
+        "v3_clamped_db": 30.89,
+        "psnr_gain_db": 3.64,
+        "status": "SCIENTIFICALLY_CONSISTENT"
+      },
+      "historical_mixed_domain_psnr": {
+        "definition": "PSNR evaluated on soft-tissue RMSE using full [-1000, +1000] HU dynamic range MAX_I = 2000.0 HU.",
+        "formula": "20.0 * log10(2000.0 / RMSE_ST)",
+        "raw_low_dose_db": 41.22,
+        "v3_clamped_db": 44.87,
+        "psnr_gain_db": 3.65,
+        "mathematical_relationship": "PSNR_mixed = PSNR_consistent + 20 * log10(5) = PSNR_consistent + 13.9794 dB",
+        "status": "HISTORICAL_COMPARISON_ONLY_DO_NOT_CONFLATE"
+      }
+    },
+    "aggregation_mathematical_analysis": {
+      "slice_mean_vs_pooled_rmse": {
+        "slice_averaged_psnr_db": 30.89,
+        "pooled_rmse_psnr_db": 30.83,
+        "difference_db": 0.06,
+        "explanation": "By Jensen's inequality, since f(x) = 20*log10(MAX/x) is strictly convex for x > 0, E[f(x)] >= f(E[x]). Slice-averaging produces a mathematically higher value (+0.06 dB) than computing PSNR from the pooled mean RMSE."
+      },
+      "patient_weighting_analysis": {
+        "micro_average_mae_hu": 8.89,
+        "macro_average_mae_hu": 8.89,
+        "micro_average_ssim": 0.9857,
+        "macro_average_ssim": 0.9857,
+        "explanation": "Because slice counts per patient are virtually balanced (L179: 143 slices [32.4%], L210: 149 slices [33.8%], L057: 149 slices [33.8%]), equal-slice weighting (micro) and equal-patient weighting (macro) yield identical results at standard precision."
+      }
+    }
+  },
+  "gate_3_output_file_retention_and_privacy": {
+    "verdict": "PASS",
+    "privacy_reconciliation": {
+      "source_file_immutability": "VERIFIED. Input files and TCIA dataset folders are opened read-only and never modified.",
+      "in_memory_input_processing": "VERIFIED. POST /api/research/denoise_dicom reads request streams into memory (io.BytesIO). Zero temporary or persistent scan files are written to static/uploads/ or local storage.",
+      "persistent_storage_of_derived_outputs": "VERIFIED EPHEMERAL. The API generates zero persistent DICOM files. (Prior reference to 'data/output/research_dicom/' in documentation was an inaccurate drafting artifact; no such directory exists or is created by the application).",
+      "dicom_metadata_redaction": "VERIFIED. Whitelist filtering extracts only non-identifying calibration parameters (RescaleSlope, RescaleIntercept) and geometry (PixelSpacing, SliceThickness, SliceLocation). Direct patient identifiers (PatientName, PatientID, PatientBirthDate), institution names, and private tags are excluded.",
+      "formal_deidentification_status": "NOT CERTIFIED. Formal DICOM PS 3.15 Annex E Basic Application Level Confidentiality Profile is NOT implemented. Burned-in pixel annotations present in input images are rendered without OCR scrubbing. Unsupported absolute claims ('zero PHI', 'fully de-identified', 'HIPAA compliant') are strictly removed and disclaimed."
+    }
+  },
+  "gate_4_frozen_checkpoint_and_tests": {
+    "verdict": "PASS",
+    "checkpoint_verification": {
+      "checkpoint_path": "artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras",
+      "expected_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+      "actual_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+      "match": true
+    },
+    "test_suite_status": {
+      "command": "& 'venv\\Scripts\\python' -m unittest discover tests",
+      "result": "Ran 89 tests in 58.126s - OK",
+      "total_tests": 89,
+      "passed": 89,
+      "failed": 0
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "status": "CLEAN"
+    },
+    "gitignore_protection": {
+      "data_directory_ignored": true,
+      "artifacts_directory_ignored": true,
+      "keras_models_ignored": true,
+      "dicom_files_ignored": true
+    },
+    "working_tree_classification": {
+      "modified_tracked_files": [
+        ".gitignore",
+        "app.py",
+        "evaluate_data.py",
+        "medical_agent.py",
+        "pinecone_rag_engine.py",
+        "validate_models_on_dataset.py"
+      ],
+      "required_project_source": [
+        "hu_calibration.py",
+        "research_inference.py",
+        "models/residual_unet.py",
+        "dataset_taxonomy.py",
+        "knowledge_base/",
+        "rag/"
+      ],
+      "audit_evidence_and_documentation": [
+        "docs/post_clamping_benchmark_reconciliation.md",
+        "docs/post_clamping_benchmark_reconciliation.json",
+        "docs/final_release_freeze_audit.md",
+        "docs/final_release_freeze_audit.json",
+        "docs/final_hu_output_range_audit.md",
+        "docs/final_hu_output_range_audit.json",
+        "docs/final_research_demo_readiness.md",
+        "docs/final_research_demo_readiness.json",
+        "docs/research_api_security_audit.md",
+        "docs/research_api_security_audit.json",
+        "docs/model_dataset_registry.md",
+        "docs/unet_residual_v3_final_acceptance_audit.md",
+        "docs/unet_residual_v3_final_acceptance_audit.json",
+        "docs/unet_residual_v3_edge_audit.md",
+        "docs/unet_residual_v3_edge_audit.json",
+        "docs/unet_residual_v3_integration_report.md",
+        "docs/unet_residual_v3_integration_report.json"
+      ],
+      "tests_and_evaluation_scripts": [
+        "tests/test_research_api_security.py",
+        "tests/test_residual_unet_v3_integration.py",
+        "tests/test_residual_unet_v3.py",
+        "tests/test_residual_unet_native.py",
+        "tests/test_hu_calibrated_pipeline.py",
+        "tests/test_model_rag_quality.py",
+        "evaluate_residual_unet_v3.py",
+        "evaluate_residual_unet_native.py",
+        "evaluate_authentic_suite.py"
+      ],
+      "scratch_utilities_for_owner_review": [
+        "scratch/reconcile_clamped_benchmark.py",
+        "scratch/clamped_reconciliation_result.json",
+        "scratch/test_real_dicom_smoke.py",
+        "scratch/download_*.py",
+        "scratch/build_*.py",
+        "scratch/inspect_*.py"
+      ]
+    }
+  },
+  "gate_5_release_freeze_documentation": {
+    "verdict": "PASS",
+    "markdown_report": "docs/final_release_freeze_audit.md",
+    "json_report": "docs/final_release_freeze_audit.json",
+    "freeze_status": {
+      "model_checkpoint": "artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras",
+      "model_status": "FROZEN_RESEARCH_CANDIDATE",
+      "retraining_permitted": false,
+      "weight_modifications": false,
+      "hyperparameter_modifications": false
+    }
+  },
+  "limitations_and_clinical_disclaimer": {
+    "disclaimer": "FOR INVESTIGATIONAL RESEARCH USE ONLY. This software and candidate model are experimental research demonstrations. Not FDA or CE cleared or approved. Not for diagnostic use, triage, clinical interpretation, or primary radiological review.",
+    "remaining_blockers_for_clinical_readiness": [
+      "Validation cohort restricted to 3 patients (441 slices) from the TCIA LDCT simulated low-dose challenge on Siemens SOMATOM Definition AS+; no multi-vendor prospective trial.",
+      "No evaluation on authentic repeated-acquisition physical low-dose scans.",
+      "Cranial CT processing remains offline due to absence of authentic head CT pairs.",
+      "OCR-based burned-in annotation scrubbing is not implemented."
+    ]
+  }
+}

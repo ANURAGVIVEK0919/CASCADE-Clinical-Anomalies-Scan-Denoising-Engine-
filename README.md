@@ -87,27 +87,72 @@ graph TD
 
 ## 4. Model Artifact Specifications
 
-> ⚠️ **Important Version Control Notice**: All `.keras` binary weight files are intentionally excluded from Git tracking via `.gitignore`. A fresh `git clone` contains the complete source code and test suite, but requires authorized model weight files to be placed in the project root before running full neural inference.
+> ⚠️ **Important Version Control Notice**: All `.keras` binary weight files are intentionally excluded from Git tracking via `.gitignore`. A fresh `git clone` contains the complete source code and test suite, but requires authorized model weight files to be placed in their designated paths before running full neural inference.
 
-See [**`MODEL_ARTIFACTS.md`**](MODEL_ARTIFACTS.md) for complete model specifications.
+See [**`MODEL_ARTIFACTS.md`**](MODEL_ARTIFACTS.md) and [**`docs/model_dataset_registry.md`**](docs/model_dataset_registry.md) for complete specifications.
 
-| Model Name | Expected Root Filename | Size (Bytes) | Size (MB) | SHA-256 Checksum |
-| :--- | :--- | :--- | :--- | :--- |
-| **U-Net CT Denoiser** | `medical_ct_denoiser_full.keras` | `23,388,275` | 22.30 MB | `ef84c7d1d808000a6e52b36cb1fdcbd7c929621d061cafbe61f822c2cf767842` |
-| **Diagnostic ResNet50V2** | `medical_ct_diagnostic_model.keras` | `256,877,707` | 244.98 MB | `a68b61a14c6ac170ef37a43e7447edeb90fafb3439ff0e0652ec33e1f4b64d41` |
+| Model Name | Expected Path | Size (Bytes) | Size (MB) | SHA-256 Checksum | Classification |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **U-Net CT Denoiser** | `medical_ct_denoiser_full.keras` | `23,388,275` | 22.30 MB | `ef84c7d1d808000a6e52b36cb1fdcbd7c929621d061cafbe61f822c2cf767842` | Legacy Baseline |
+| **Diagnostic ResNet50V2** | `medical_ct_diagnostic_model.keras` | `256,877,707` | 244.98 MB | `a68b61a14c6ac170ef37a43e7447edeb90fafb3439ff0e0652ec33e1f4b64d41` | Exploratory Classifier |
+| **Residual U-Net v3** | `artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras` | `23,388,435` | 22.30 MB | `bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea` | Preliminary Research Candidate (Frozen) |
 
 ### Input/Output Tensor Contracts
-* **U-Net CT Denoiser**:
-  * Input: `(batch_size, 256, 256, 1)`, float32, range $[0.0, 1.0]$.
+* **Legacy U-Net CT Denoiser**:
+  * Input: `(batch_size, 256, 256, 1)`, float32, normalized to $[0.0, 1.0]$.
   * Output: `(batch_size, 256, 256, 1)`, float32, range $[0.0, 1.0]$ via `sigmoid` activation.
 * **Diagnostic ResNet50V2**:
-  * Input: `(batch_size, 256, 256, 1)`, float32, range $[0.0, 1.0]$.
+  * Input: `(batch_size, 256, 256, 1)`, float32, normalized to $[0.0, 1.0]$.
   * Output 0: `(batch_size, 3)`, float32 softmax probabilities (`Chest`, `Brain`, `Abdomen`).
   * Output 1: `(batch_size, 4)`, float32 normalized bounding box `[ymin, xmin, ymax, xmax]`.
+* **Residual U-Net v3 (Preliminary Research Candidate)**:
+  * Input: Native $512 \times 512 \times 1$ calibrated CT slice, linearly mapped from $[-1000.0, +1000.0]$ HU to $[0.0, 1.0]$.
+  * Inference: Extracted into overlapping $128 \times 128 \times 1$ grid patches (stride 64) and blended across seams with a smooth 2D Hann window.
+  * Output: Native $512 \times 512 \times 1$ tensor, domain-bounded clamped to $[0.0, 1.0]$, and inversely converted to $[-1000.0, +1000.0]$ HU.
 
 ---
 
-## 5. Local Setup & Quick Start Guide
+## 5. Experimental Research Denoising Pipeline (Residual U-Net v3)
+
+CASCADE provides a dedicated, hardened research endpoint (`POST /api/research/denoise_dicom`) implementing physical Hounsfield Unit (HU) calibrated denoising for medical CT scans using the **Residual U-Net v3 preliminary research candidate**.
+
+### 5.1 Architecture & Native Patch Blending
+* **Identity-Preserving Residual Learning**: Integrates a zero-initialized residual scaling layer ensuring that prior to training, the network computes an exact identity mapping $\hat{y} = x$.
+* **Edge-Preserving Loss Objective**: Trained with a compound loss combining Huber intensity error with an L1 vector gradient regularizer ($\lambda_{\text{edge}} = 0.01$) to penalize anatomical edge blurring.
+* **Seam-Free 2D Hann Windowing**: Native $512 \times 512$ scans are reconstructed from overlapping $128 \times 128$ patches weighted by separable 2D Hann windows, eliminating grid boundary discontinuities.
+* **Domain-Bounded Clamping**: Enforces output clamping to $[0.0, 1.0]$ ($[-1000, +1000]$ HU) to eliminate unphysical air extrapolation while logging unclipped pre-clamp statistics.
+
+### 5.2 Preliminary Benchmark Reconciliation (Locked 441-Slice Cohort)
+Evaluated on a locked held-out test cohort of **441 matched CT slice pairs** across 3 patients (`L179`, `L210`, `L057`) from the TCIA Low-Dose CT Grand Challenge (Siemens SOMATOM Definition AS+ simulated reconstructions):
+
+| Evaluation Metric | Raw Low-Dose CT | Residual U-Net v3 | Net Improvement | Measurement Conditions |
+| :--- | :---: | :---: | :---: | :--- |
+| **Soft-Tissue MAE (HU)** | 13.76 | **8.89** | **-4.87 HU (-35.39%)** | Abdominal soft-tissue $[-160, +240]$ HU; body contour $> -500$ HU |
+| **Consistent Soft-Tissue PSNR (dB)** | 27.25 | **30.89** | **+3.64 dB** | Dynamic range $\text{MAX}_I = 400.0$ HU ($[-160, +240]$ HU) |
+| **Historical Mixed-Domain PSNR (dB)** | 41.22 | **44.87** | **+3.65 dB** | Full clinical range $\text{MAX}_I = 2000.0$ HU ($+13.98$ dB mathematical offset) |
+| **Consistent Soft-Tissue SSIM** | 0.8776 | **0.9250** | **+0.0474** | Soft-tissue window $[-160, +240]$ HU; peak range 400.0 HU |
+| **Soft-Tissue Vector Gradient Error** | 93.37 | **74.39** | **-18.98 HU/px (-20.33%)** | Directional Sobel vector difference $\|\nabla I_{\text{pred}} - \nabla I_{\text{ref}}\|_2$ |
+
+#### Important Metric & Acceptance Distinctions:
+1. **Physical Soft-Tissue Window vs. Dynamic Range**: The clinical abdominal soft-tissue window is strictly physical $[-160.0, +240.0]$ HU (span width $W = 400.0$ HU) restricted to voxels within the patient body contour ($\text{HU} > -500$). The $[0.0, 400.0]$ domain represents the shifted/normalized metric computation interval ($I - (-160.0)$), not a physical HU window.
+2. **PSNR Domain Distinction**: Consistent Soft-Tissue PSNR (30.89 dB, 400 HU range) must not be conflated with historical mixed-domain PSNR (44.87 dB, 2000 HU range). Because $\text{PSNR}_{\text{mixed}} = \text{PSNR}_{\text{consistent}} + 20 \log_{10}(5) = \text{PSNR}_{\text{consistent}} + 13.98\ \text{dB}$, they represent different dynamic ranges and are not directly interchangeable.
+3. **Acceptance Criteria Codification & Temporal Provenance**: The engineering acceptance criteria codified in executable evaluation code (`evaluate_residual_unet_v3.py:L226-228`) are:
+   * **Criterion 1 (Intensity)**: Soft-Tissue MAE $\le 10.0$ HU and improvement $\ge 0.50$ HU over raw low-dose CT ($\Delta \le -0.50$ HU).
+   * **Criterion 2 (Structural Integrity)**: Full SSIM $\ge 0.9000$ and degradation $\le 0.015$ relative to raw scan ($\Delta \ge -0.015$).
+   * **Criterion 3 (Edge Preservation)**: Vector gradient error $\le$ raw low-dose error.
+   * *Temporal Provenance Disclosure*: While these criteria are codified in the test runner, because the runner and test execution occurred within the same working session without an immutable prior git commit, their pre-test timing is formally classified as `NOT_INDEPENDENTLY_VERIFIED`.
+   * *Retrospective Variants & Disclaimers*: Thresholds such as "$\ge 20\%$ relative MAE reduction", "PSNR $\ge 42$ dB", or "SSIM $\ge 0.95$" were retrospective post-hoc observations or baseline comparisons; they were **not** prespecified criteria.
+4. **Full-Scan vs. Soft-Tissue SSIM**: Reported Full SSIM (0.9857 vs. raw 0.9641) is computed over the full unmasked $512 \times 512$ canvas normalized across $[-1000, +1000]$ HU, where uniform zero-valued ambient air inflates both numbers; it is therefore excluded from primary claims in favor of the consistent soft-tissue windowed SSIM (0.9250 vs. raw 0.8776 across $[-160, +240]$ HU).
+5. **Research Scope Notice**: This evaluation represents a preliminary retrospective benchmark across 3 patients and 441 slices. It does not constitute multi-vendor physical rescan validation or clinical approval.
+
+### 5.3 Research Endpoint Privacy & Data Handling
+* **In-Memory Ephemeral Execution**: Scans uploaded to `POST /api/research/denoise_dicom` are streamed into memory (`io.BytesIO`) under a strict 32 MB bounded limit. No input scans or derived DICOM files are stored on disk.
+* **Selected Metadata Redaction**: Whitelist filtering returns only non-identifying physical CT calibration (`RescaleSlope`, `RescaleIntercept`) and spatial geometry (`PixelSpacing`, `SliceThickness`). Direct patient identifiers (`PatientName`, `PatientID`, `PatientBirthDate`), physician names, institution tags, and private vendor tags are completely excluded from JSON payloads.
+* **Privacy Disclaimers**: Formal DICOM de-identification certification (e.g., DICOM PS 3.15 Annex E Basic Application Level Confidentiality Profile) is **not** claimed. Burned-in pixel annotations present on raw scans are not scrubbed. Blanket claims of "zero PHI" or "HIPAA compliance" are avoided.
+
+---
+
+## 6. Local Setup & Quick Start Guide
 
 ### Prerequisites
 * **Operating System**: Windows 10/11, Ubuntu 20.04+, or macOS.
@@ -118,7 +163,7 @@ See [**`MODEL_ARTIFACTS.md`**](MODEL_ARTIFACTS.md) for complete model specificat
 
 ```powershell
 # In Windows PowerShell:
-git clone -b feat/enterprise-baseline https://github.com/ANURAGVIVEK0919/CASCADE-Clinical-Anomalies-Scan-Denoising-Engine-.git
+git clone -b feat/model-rag-quality https://github.com/ANURAGVIVEK0919/CASCADE-Clinical-Anomalies-Scan-Denoising-Engine-.git
 cd CASCADE-Clinical-Anomalies-Scan-Denoising-Engine-
 
 # Create virtual environment
@@ -137,23 +182,25 @@ pip install -r requirements.txt
 ```
 
 ### Step 3: Supply Authorized Model Files
-Obtain the verified `.keras` model binaries from your organization's authorized artifact repository and place them in the project root:
-* `./medical_ct_denoiser_full.keras`
-* `./medical_ct_diagnostic_model.keras`
+Obtain the verified `.keras` model binaries from your organization's authorized artifact repository and place them in their designated locations:
+* `./medical_ct_denoiser_full.keras` (Legacy U-Net Baseline)
+* `./medical_ct_diagnostic_model.keras` (Diagnostic ResNet50V2)
+* `./artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras` (Residual U-Net v3)
 
 Verify file integrity using SHA-256 in PowerShell:
 ```powershell
 Get-FileHash medical_ct_denoiser_full.keras, medical_ct_diagnostic_model.keras -Algorithm SHA256
+Get-FileHash artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras -Algorithm SHA256
 ```
 
-### Step 4: Run the Regression Test Suite
-Execute the project-local end-to-end integration test suite before launching the application:
+### Step 4: Run the Full Offline Test Suite
+Execute the project-local offline verification suite before launching the application:
 
 ```powershell
-.\venv\Scripts\python.exe -m unittest tests.test_integration -v
+.\venv\Scripts\python.exe -m unittest discover tests
 ```
 
-All 28 tests must pass with exit code `0`. Tests execute 100% offline using synthetic fixtures and mock cloud clients.
+All 89 tests must pass with exit code `0`. Tests execute 100% offline using synthetic fixtures and mock cloud clients.
 
 ### Step 5: Start the Local Web Application
 Run the local development research-demo server:
@@ -171,12 +218,14 @@ python app.py
 
 ---
 
-## 6. API Reference
+## 7. API Reference
 
 | Endpoint | Method | Purpose | Demo / Offline Behavior |
 | :--- | :---: | :--- | :--- |
 | `/` | `GET` | Renders the interactive dark PACS web dashboard. | Serves local HTML/CSS/JS with zero external CDN dependencies. |
-| `/process` | `POST` | Processes batch uploaded CT slices (`.png`, `.jpg`, `.dcm`). Executes U-Net denoising, organ prediction, candidate ROI extraction, Grad-CAM generation, and multi-agent consultation. | Returns complete JSON results including base64 image data. Evaluates PSNR/SSIM only when clean pairs exist. |
+| `/process` | `POST` | Processes batch uploaded CT slices (`.png`, `.jpg`, `.dcm`). Executes legacy U-Net denoising, organ prediction, candidate ROI extraction, Grad-CAM generation, and multi-agent consultation. | Returns complete JSON results including base64 image data. Evaluates PSNR/SSIM only when clean pairs exist. |
+| `/api/research/denoise_dicom` | `POST` | Dedicated research endpoint for physical CT DICOM slices using Residual U-Net v3. | Strictly in-memory ephemeral execution, selected metadata whitelist redaction, zero disk save, base64 display previews, and dynamic output range accounting. |
+| `/metrics` | `GET` | Prometheus & system health monitoring observability endpoint. | Exposes separate pipeline telemetry for legacy web pipeline vs. research DICOM pipeline, model availability, and service health. |
 | `/api/copilot/chat` | `POST` | Interacts with the LangGraph multi-agent board with custom clinical queries and scan context. | Queries local dense vector cosine matrix when Pinecone API key is unconfigured. |
 | `/api/copilot/approve` | `POST` | Records a demo review acknowledgement for a processed scan slice. | Sets `review_acknowledged: true`. Strictly enforces `is_human_verified: false` and `reviewer_identity_verified: false`. Ignores client-supplied doctor names. |
 | `/api/s3/upload` | `POST` | Archives a specific scan artifact (`restored_image`, `gradcam_overlay`, `diff_map`, `report_json`) to S3. | Truthfully returns `status: "Unavailable"` in local offline mode without falsifying a successful upload. Enforces AES256 encryption. |
@@ -184,41 +233,28 @@ python app.py
 
 ---
 
-## 7. Automated Testing & Verification Suite
+## 8. Automated Testing & Verification Suite
 
-The repository includes a comprehensive, project-local test suite in [`tests/test_integration.py`](tests/test_integration.py) covering 28 verified automated test gates across 6 categories:
+The repository includes a comprehensive, project-local test suite comprising **89 automated offline tests** across 7 test modules:
 
-1. **S3 Artifact Vault & Ingestion Integration Tests (11 tests)**:
-   * Verifies exact-byte uploads for restored scans, Grad-CAM overlays, difference maps, and report JSON.
-   * Enforces AES256 server-side encryption parameters.
-   * Enforces strict allowlist filtering stripping patient identifiers, hospital names, and client paths from report JSON.
-   * Rejects malformed image signatures, corrupted base64 payloads, and oversized payloads ($>25\text{ MB}$).
-   * Verifies truthful `Unavailable` status when S3 is offline without simulating false success.
-2. **U-Net Batch DICOM Pipeline Tests (4 tests)**:
-   * Verifies pipeline output shapes, finite float values, and $[0.0, 1.0]$ normalization range.
-   * Verifies aspect ratio and spatial resolution preservation across non-standard input geometries.
-   * Verifies caching of a single U-Net model instance across slices in a batch.
-   * Verifies explicit `FileNotFoundError` raised when required model weights are absent.
-3. **Safe Operational Telemetry Tests (1 test)**:
-   * Verifies regex sanitization stripping local drive paths (`D:\...`), AWS access keys (`AKIA...`), tokens, and PHI.
-4. **Diagnostic Neural Inference & Grad-CAM Tests (3 tests)**:
-   * Verifies candidate ROI coordinate bounding boxes are normalized and clamped to $[0.0, 1.0]$.
-   * Verifies Grad-CAM generates valid overlays and handles model failures gracefully with clean `None` returns.
-   * Verifies real local model smoke execution with independent organ classification across target classes.
-5. **Multi-Agent Null-Safety & End-to-End Route Tests (4 tests)**:
-   * Verifies agent handles `None` PSNR/SSIM metrics gracefully without crash or synthetic fallback.
-   * Verifies end-to-end `/process` route execution using real model forward passes.
-   * Verifies invalid or empty multipart uploads fail safely with HTTP `400`.
-6. **HITL Review Integrity & Safety Tests (5 tests)**:
-   * Verifies default scan state has `is_human_verified: false` and unreviewed status.
-   * Verifies anonymous demo acknowledgement sets `review_acknowledged: true` but **never** `is_human_verified: true`.
-   * Verifies client-supplied doctor names, degrees, or verification flags cannot forge verified clinician status.
-   * Verifies S3 upload sanitizes forged doctor names and actively clamps `is_human_verified: false` in stored JSON.
-   * Verifies review status does not bleed between separate scans.
-
+1. **Security & Research Endpoint Isolation ([`tests/test_research_api_security.py`](tests/test_research_api_security.py), 16 tests)**:
+   * Validates endpoint isolation, 32 MB upload limit bounds, non-CT input rejection, and ephemeral in-memory processing.
+   * Enforces exclusion of direct patient identifiers (`PatientName`, `PatientID`, `PatientBirthDate`) from API responses.
+2. **Residual U-Net v3 Integration ([`tests/test_residual_unet_v3_integration.py`](tests/test_residual_unet_v3_integration.py), 10 tests)**:
+   * Validates Flask API integration, multi-window display modes (`soft_tissue`, `lung`, `bone`, `full_body`), and spatial geometry preservation.
+3. **Residual U-Net Architecture & Edge Regularization ([`tests/test_residual_unet_v3.py`](tests/test_residual_unet_v3.py), 7 tests)**:
+   * Validates zero-initialized residual layer identity mapping and L1 vector gradient regularizer loss behavior.
+4. **Native Patch Reconstruction & Hann Blending ([`tests/test_residual_unet_native.py`](tests/test_residual_unet_native.py), 5 tests)**:
+   * Validates 2D Hann window blending, grid patch extraction, and artifact-free seam elimination.
+5. **Physical HU Calibration Pipeline ([`tests/test_hu_calibrated_pipeline.py`](tests/test_hu_calibrated_pipeline.py), 13 tests)**:
+   * Validates physical Hounsfield conversion, $[-1000, +1000]$ HU windowing, and anatomical mask extractions.
+6. **RAG & Multi-Agent Quality ([`tests/test_model_rag_quality.py`](tests/test_model_rag_quality.py), 12 tests)**:
+   * Validates clinical guidelines chunking, cosine fallback matrix, and LangGraph multi-agent board null-safety.
+7. **End-to-End System Integration ([`tests/test_integration.py`](tests/test_integration.py), 26 tests)**:
+   * Validates S3 cloud vault offline fallbacks, basic metadata sanitization safeguards, and review state integrity.
 ---
 
-## 8. Limitations & Clinical Safety Disclaimers
+## 9. Limitations & Clinical Safety Disclaimers
 
 * **No Disease-Specific Pathology Classifier**: The multi-task network classifies 3 anatomical organ regions (`Chest`, `Brain`, `Abdomen`). It does **not** classify specific disease entities (such as ischemic stroke vs. intracerebral hemorrhage, pulmonary consolidation vs. pneumothorax).
 * **Emergency Status Not Assessed**: Emergency triage cannot be evaluated based on organ classification or bounding box heuristics. `is_emergency` remains strictly `None` and `emergency_status` remains `"Not Assessed (No Certified Pathology Classifier)"`.
@@ -231,23 +267,23 @@ The repository includes a comprehensive, project-local test suite in [`tests/tes
 
 ---
 
-## 9. Developer Onboarding Handoff Checklist
+## 10. Developer Onboarding Handoff Checklist
 
 Follow this checklist when setting up a fresh development environment:
 
-1. [ ] **Clone Branch**: Ensure you are on branch `feat/enterprise-baseline`.
-2. [ ] **Model Placement**: Place `medical_ct_denoiser_full.keras` and `medical_ct_diagnostic_model.keras` in the project root.
+1. [ ] **Clone Branch**: Ensure you are on branch `feat/model-rag-quality`.
+2. [ ] **Model Placement**: Place `medical_ct_denoiser_full.keras` and `medical_ct_diagnostic_model.keras` in the project root, and `candidate_unet_residual_edge_v3.keras` under `artifacts/experiments/unet_residual_edge_v3/run_001/`.
 3. [ ] **Checksum Audit**: Run `Get-FileHash *.keras -Algorithm SHA256` and confirm matching digests in `MODEL_ARTIFACTS.md`.
 4. [ ] **Environment Setup**: Create a clean Python 3.11 virtual environment (`python -m venv venv`).
 5. [ ] **Dependency Installation**: Run `pip install -r requirements.txt`.
-6. [ ] **Test Gate**: Run `python -m unittest tests.test_integration -v` and confirm 28/28 tests pass.
+6. [ ] **Test Gate**: Run `python -m unittest discover tests` and confirm all 89 tests pass offline.
 7. [ ] **Local Launch**: Run `python app.py` and open `http://127.0.0.1:5000`.
 8. [ ] **Synthetic Test Scan**: Upload a non-identifying synthetic test image (ensuring no real patient data is used) to verify denoising, candidate ROI, and demo review acknowledgement.
 9. [ ] **Offline Cloud Verification**: Click "Archive Restored Scan to S3" and confirm the system reports `Status: Unavailable (Offline Mode)`.
 
 ---
 
-## 10. Future Work & Roadmap
+## 11. Future Work & Roadmap
 
 ### Research & Algorithmic Extensions
 * Integration of patient-wise cross-validation splits to prevent slice leakage across training folds.
