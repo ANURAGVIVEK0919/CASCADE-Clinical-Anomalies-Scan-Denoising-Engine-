@@ -260,3 +260,31 @@ Follow this checklist when setting up a fresh development environment:
 * Independent validation and compliance certification of DICOM de-identification pipelines (e.g., full DICOM PS 3.15 Annex E de-identification profiles and burned-in OCR pixel scrubbing) under HIPAA Safe Harbor or Expert Determination standards.
 * Cryptographic, immutable, append-only clinical audit trail (e.g., AWS QLDB or signed PostgreSQL ledger) compliant with 21 CFR Part 11 and HIPAA Security Rules.
 * Certified DICOM DIMSE C-STORE / C-FIND networking node integration for direct PACS routing.
+
+---
+
+## Portfolio Showcase & Rights Notice
+
+CASCADE is published publicly as an engineering portfolio and
+research-demo showcase. This repository is not released under
+an open-source license.
+
+Except for the limited rights provided through GitHub's Terms
+of Service and public-repository functionality, no additional
+license or permission is granted to use, reproduce, modify,
+redistribute, sublicense, or create derivative works from the
+original project materials without prior written authorization
+from the applicable rights holder.
+
+Rights in original project materials remain with their respective
+rights holders. This notice does not claim ownership of third-party
+software, fonts, images, datasets, models, or other assets. Those
+materials remain subject to their respective licenses and terms.
+
+Medical imaging datasets and trained model-weight files are
+intentionally excluded from this repository. Their use and
+redistribution may be subject to separate terms; publication of
+this source code does not grant additional rights to those assets.
+
+This project is a research and engineering demonstration, not a
+certified clinical diagnostic system.
