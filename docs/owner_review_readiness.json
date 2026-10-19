@@ -1,0 +1,294 @@
+{
+  "audit_metadata": {
+    "title": "CASCADE Final Owner-Review Readiness & Acceptance Provenance Audit",
+    "timestamp": "2026-10-20T03:45:00Z",
+    "project_path": "D:\\CASCADE-Clinical-Anomalies-Scan-Denoising-Engine-",
+    "branch": "feat/model-rag-quality",
+    "head_commit": "0ede53e",
+    "frozen_checkpoint": "artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras",
+    "expected_checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "verified_checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "sha256_match": true,
+    "audit_status": "AUDIT_COMPLETE_READY_FOR_OWNER_DECISION"
+  },
+  "temporal_provenance_audit": {
+    "evaluation_context": "Locked 441-slice held-out test cohort (patients L179, L210, L057). Script evaluate_residual_unet_v3.py created at 2026-10-20 00:30:08, candidate weights finished training at 2026-10-20 01:10:03, evaluation executed ~01:15.",
+    "criteria_evaluations": {
+      "st_mae_le_10_hu": {
+        "rule": "Soft-Tissue MAE <= 10.0 HU",
+        "code_implemented": true,
+        "code_location": "evaluate_residual_unet_v3.py:L226",
+        "independent_prior_record": false,
+        "current_tree_evidence": "Script file created in uncommitted working tree during session",
+        "temporal_status": "NOT_INDEPENDENTLY_VERIFIED"
+      },
+      "st_mae_improvement_ge_0_50_hu": {
+        "rule": "Soft-Tissue MAE improvement >= 0.50 HU (delta <= -0.50 HU)",
+        "code_implemented": true,
+        "code_location": "evaluate_residual_unet_v3.py:L226 & evaluate_residual_unet_native.py:L290,L362",
+        "independent_prior_record": false,
+        "current_tree_evidence": "Present in earlier v2 native evaluator and carried forward to v3 runner in working tree",
+        "temporal_status": "NOT_INDEPENDENTLY_VERIFIED"
+      },
+      "full_ssim_ge_0_9000": {
+        "rule": "Full SSIM >= 0.9000",
+        "code_implemented": true,
+        "code_location": "evaluate_residual_unet_v3.py:L227",
+        "independent_prior_record": false,
+        "current_tree_evidence": "Codified in evaluate_residual_unet_v3.py lines 15 & 227",
+        "temporal_status": "NOT_INDEPENDENTLY_VERIFIED"
+      },
+      "ssim_degradation_le_0_015": {
+        "rule": "SSIM degradation <= 0.015 relative to raw low-dose CT (delta >= -0.015)",
+        "code_implemented": true,
+        "code_location": "evaluate_residual_unet_v3.py:L227 & evaluate_residual_unet_native.py:L291,L363",
+        "independent_prior_record": false,
+        "current_tree_evidence": "Present in evaluate_residual_unet_native.py and evaluate_residual_unet_v3.py",
+        "temporal_status": "NOT_INDEPENDENTLY_VERIFIED"
+      },
+      "vector_gradient_error_le_raw": {
+        "rule": "Vector Gradient Error <= Raw Low-Dose Vector Gradient Error",
+        "code_implemented": true,
+        "code_location": "evaluate_residual_unet_v3.py:L228",
+        "independent_prior_record": false,
+        "current_tree_evidence": "Codified in evaluate_residual_unet_v3.py lines 16 & 228",
+        "temporal_status": "NOT_INDEPENDENTLY_VERIFIED"
+      },
+      "historical_psnr_ge_42_db": {
+        "rule": "Historical Mixed PSNR >= 42 dB",
+        "code_implemented": false,
+        "code_location": null,
+        "independent_prior_record": false,
+        "current_tree_evidence": "Informal retrospective comparison; never codified as an acceptance criterion",
+        "temporal_status": "UNVERIFIED_AS_CRITERION"
+      },
+      "historical_ssim_ge_0_95": {
+        "rule": "Historical SSIM >= 0.95",
+        "code_implemented": false,
+        "code_location": null,
+        "independent_prior_record": false,
+        "current_tree_evidence": "Informal retrospective comparison; never codified as an acceptance criterion",
+        "temporal_status": "UNVERIFIED_AS_CRITERION"
+      },
+      "st_mae_reduction_ge_20pct": {
+        "rule": "Soft-Tissue MAE reduction >= 20.0%",
+        "code_implemented": false,
+        "code_location": "docs/unet_residual_v3_final_acceptance_audit.md:L119",
+        "independent_prior_record": false,
+        "current_tree_evidence": "First appeared post-hoc in audit tables after observing 35.39% reduction",
+        "temporal_status": "RETROSPECTIVE_POST_HOC_VARIANT"
+      }
+    }
+  },
+  "confirmed_metric_definitions": {
+    "soft_tissue_mae": {
+      "raw_low_dose_hu": 13.76,
+      "residual_v3_hu": 8.89,
+      "delta_hu": -4.87,
+      "reduction_pct": -35.39,
+      "measurement_window": "[-160.0, +240.0] HU (body contour > -500 HU)"
+    },
+    "consistent_soft_tissue_psnr": {
+      "raw_low_dose_db": 27.25,
+      "residual_v3_db": 30.89,
+      "gain_db": 3.64,
+      "measurement_window": "[-160.0, +240.0] HU (dynamic range MAX_I = 400.0 HU)"
+    },
+    "historical_mixed_psnr": {
+      "raw_low_dose_db": 41.22,
+      "residual_v3_db": 44.87,
+      "gain_db": 3.65,
+      "formula": "20 * log10(2000.0 / ST_RMSE)",
+      "mathematical_offset": "+13.98 dB constant (20 * log10(5))",
+      "interchangeable_with_st_psnr": false
+    },
+    "consistent_soft_tissue_ssim": {
+      "raw_low_dose": 0.8776,
+      "residual_v3": 0.9250,
+      "gain": 0.0474,
+      "measurement_window": "[-160.0, +240.0] HU (range 400.0 HU)"
+    },
+    "reported_full_scan_ssim": {
+      "raw_low_dose": 0.9641,
+      "residual_v3": 0.9857,
+      "gain": 0.0216,
+      "limitation": "Inflated by constant zero-valued ambient air outside the patient body; excluded from primary claims"
+    },
+    "soft_tissue_vector_gradient_error": {
+      "raw_low_dose_hu_per_px": 93.37,
+      "residual_v3_hu_per_px": 74.39,
+      "delta_hu_per_px": -18.98,
+      "reduction_pct": -20.33,
+      "units": "HU/pixel"
+    }
+  },
+  "large_diff_risk_analysis": {
+    "pinecone_rag_engine_py": {
+      "diff_stat": "445 lines changed (+84, -361)",
+      "nature": "Removal of in-memory synthetic fallback dataset (DENSE_CLINICAL_DATASET), removal of DenseEmbeddingGenerator (hash projection), elimination of +0.45/+0.35 artificial score boosts, and replacement with modular ClinicalRAGRetriever.",
+      "contract_changes": [
+        "similarity_score returned None instead of synthetic float (0.95) when unconfigured or offline.",
+        "retrieval_mode returned 'unconfigured' or 'unavailable' instead of 'local_fallback'.",
+        "matches_count is 0 when offline instead of synthetic matches."
+      ],
+      "downstream_compatibility": "medical_agent.py safely guards against sim_score is None (lines 191-195). App does not crash.",
+      "risk_level": "LOW_TO_MEDIUM",
+      "recommendation": "NEEDS_OWNER_REVIEW (Owner confirmation of shift to pure authentic offline state without synthetic fallbacks)."
+    },
+    "validate_models_on_dataset_py": {
+      "diff_stat": "253 lines changed (+127, -126)",
+      "nature": "Replaced hardcoded data/separated_scans paths with dynamic CLI arguments (--data-dir, --sample-size, --output-path). Replaced disease severity keys with Candidate ROI detection status.",
+      "contract_changes": [
+        "severity_dist dictionary keys changed from {'Normal', 'Mild Anomaly', 'High Risk'} to {'Candidate ROI Detected', 'No Candidate ROI Flagged'}.",
+        "Paired PSNR/SSIM calculation strictly guarded by clean file existence."
+      ],
+      "downstream_compatibility": "No other modules import validate_models_on_dataset; standalone evaluation script only.",
+      "risk_level": "LOW",
+      "recommendation": "NEEDS_OWNER_REVIEW (Owner confirmation of severity vs ROI label terminology)."
+    },
+    "app_py": {
+      "diff_stat": "182 lines changed (+181, -1)",
+      "nature": "Added dedicated /api/research/denoise_dicom route (32 MB max, in-memory processing), added denoiser_engine field, preserved all legacy routes.",
+      "contract_changes": [
+        "Legacy /process output augmented with pipeline, model_version, and denoiser_engine fields (backward-compatible additions)."
+      ],
+      "risk_level": "VERY_LOW",
+      "recommendation": "RECOMMEND_STAGE"
+    },
+    "evaluate_data_py": {
+      "diff_stat": "180 lines changed (+108, -72)",
+      "nature": "Replaced hardcoded paths with CLI arguments and environment variable CASCADE_DATA_DIR; added random.seed(42) for reproducible sampling.",
+      "risk_level": "LOW",
+      "recommendation": "NEEDS_OWNER_REVIEW"
+    },
+    "medical_agent_py": {
+      "diff_stat": "63 lines changed (+39, -24)",
+      "nature": "Guarded against None similarity scores, removed synthetic ssim_delta defaults (0.267 -> None), updated LLM prompt to forbid hallucinating metrics.",
+      "risk_level": "VERY_LOW",
+      "recommendation": "RECOMMEND_STAGE"
+    },
+    "README_md": {
+      "diff_stat": "151 lines changed (+92, -59)",
+      "nature": "Full alignment with preliminary research candidate state, repository-relative links, metrics, privacy disclaimers, and 89-test suite.",
+      "risk_level": "VERY_LOW",
+      "recommendation": "RECOMMEND_STAGE"
+    },
+    "gitignore": {
+      "diff_stat": "8 lines added",
+      "nature": "Added scratch/ ignore rule to protect intermediate calculation and download scripts.",
+      "risk_level": "ZERO",
+      "recommendation": "RECOMMEND_STAGE"
+    }
+  },
+  "proposed_staging_inventory_classification": {
+    "changeset_1_core_research_pipeline": {
+      "hu_calibration.py": "RECOMMEND_STAGE",
+      "models/residual_unet.py": "RECOMMEND_STAGE",
+      "research_inference.py": "RECOMMEND_STAGE",
+      "app.py": "RECOMMEND_STAGE",
+      ".gitignore": "RECOMMEND_STAGE"
+    },
+    "changeset_2_rag_knowledge_base": {
+      "knowledge_base/clinical_sources/acr_appropriateness_head_trauma.md": "RECOMMEND_STAGE",
+      "knowledge_base/clinical_sources/fleischner_society_pulmonary_nodules.md": "RECOMMEND_STAGE",
+      "knowledge_base/clinical_sources/lirads_liver_imaging_reporting.md": "RECOMMEND_STAGE",
+      "dataset_taxonomy.py": "RECOMMEND_STAGE",
+      "medical_agent.py": "RECOMMEND_STAGE",
+      "pinecone_rag_engine.py": "NEEDS_OWNER_REVIEW",
+      "rag/chunker.py": "RECOMMEND_STAGE",
+      "rag/embeddings.py": "RECOMMEND_STAGE",
+      "rag/evaluate_rag.py": "RECOMMEND_STAGE",
+      "rag/ingest.py": "RECOMMEND_STAGE",
+      "rag/parsers.py": "RECOMMEND_STAGE",
+      "rag/retriever.py": "RECOMMEND_STAGE",
+      "rag/verify_connection.py": "RECOMMEND_STAGE",
+      "rag/__init__.py": "RECOMMEND_STAGE"
+    },
+    "changeset_3_regression_and_security_tests": {
+      "tests/test_research_api_security.py": "RECOMMEND_STAGE",
+      "tests/test_residual_unet_v3_integration.py": "RECOMMEND_STAGE",
+      "tests/test_residual_unet_v3.py": "RECOMMEND_STAGE",
+      "tests/test_residual_unet_native.py": "RECOMMEND_STAGE",
+      "tests/test_hu_calibrated_pipeline.py": "RECOMMEND_STAGE",
+      "tests/test_model_rag_quality.py": "RECOMMEND_STAGE"
+    },
+    "changeset_4_evaluation_and_dataset_utilities": {
+      "evaluate_residual_unet_v3.py": "RECOMMEND_STAGE",
+      "evaluate_residual_unet_native.py": "RECOMMEND_STAGE",
+      "evaluate_hu_calibrated_unet.py": "RECOMMEND_STAGE",
+      "evaluate_authentic_suite.py": "RECOMMEND_STAGE",
+      "validate_dataset_integrity.py": "RECOMMEND_STAGE",
+      "evaluate_data.py": "NEEDS_OWNER_REVIEW",
+      "validate_models_on_dataset.py": "NEEDS_OWNER_REVIEW",
+      "execute_safe_cleanup.py": "NEEDS_OWNER_REVIEW",
+      "prepare_authentic_dataset.py": "NEEDS_OWNER_REVIEW",
+      "train_authentic_localization.py": "NEEDS_OWNER_REVIEW",
+      "train_hu_calibrated_unet.py": "NEEDS_OWNER_REVIEW",
+      "train_reproducible.py": "NEEDS_OWNER_REVIEW",
+      "train_residual_unet_native.py": "NEEDS_OWNER_REVIEW",
+      "train_residual_unet_v3.py": "NEEDS_OWNER_REVIEW",
+      "train_spatial_detector.py": "NEEDS_OWNER_REVIEW",
+      "train_unet_denoiser.py": "NEEDS_OWNER_REVIEW",
+      "evaluate_models.py": "NEEDS_OWNER_REVIEW",
+      "evaluate_residual_dev.py": "NEEDS_OWNER_REVIEW"
+    },
+    "changeset_5_model_registry_and_documentation": {
+      "README.md": "RECOMMEND_STAGE",
+      "docs/model_dataset_registry.md": "RECOMMEND_STAGE",
+      "docs/dataset_sources.md": "RECOMMEND_STAGE",
+      "docs/post_clamping_benchmark_reconciliation.md": "RECOMMEND_STAGE",
+      "docs/post_clamping_benchmark_reconciliation.json": "RECOMMEND_STAGE",
+      "docs/final_release_freeze_audit.md": "RECOMMEND_STAGE",
+      "docs/final_release_freeze_audit.json": "RECOMMEND_STAGE",
+      "docs/pre_commit_readiness_audit.md": "RECOMMEND_STAGE",
+      "docs/pre_commit_readiness_audit.json": "RECOMMEND_STAGE",
+      "docs/final_hu_output_range_audit.md": "RECOMMEND_STAGE",
+      "docs/final_hu_output_range_audit.json": "RECOMMEND_STAGE",
+      "docs/final_research_demo_readiness.md": "RECOMMEND_STAGE",
+      "docs/final_research_demo_readiness.json": "RECOMMEND_STAGE",
+      "docs/research_api_security_audit.md": "RECOMMEND_STAGE",
+      "docs/research_api_security_audit.json": "RECOMMEND_STAGE",
+      "docs/unet_residual_v3_final_acceptance_audit.md": "RECOMMEND_STAGE",
+      "docs/unet_residual_v3_final_acceptance_audit.json": "RECOMMEND_STAGE",
+      "docs/unet_residual_v3_edge_audit.md": "RECOMMEND_STAGE",
+      "docs/unet_residual_v3_edge_audit.json": "RECOMMEND_STAGE",
+      "docs/unet_residual_v3_integration_report.md": "RECOMMEND_STAGE",
+      "docs/unet_residual_v3_integration_report.json": "RECOMMEND_STAGE",
+      "docs/unet_residual_native_training_report.md": "RECOMMEND_STAGE",
+      "docs/unet_residual_native_training_report.json": "RECOMMEND_STAGE",
+      "docs/hu_calibrated_training_report.md": "RECOMMEND_STAGE",
+      "docs/hu_calibrated_training_report.json": "RECOMMEND_STAGE",
+      "docs/model_baseline_report.json": "RECOMMEND_STAGE",
+      "docs/model_rag_audit.md": "RECOMMEND_STAGE",
+      "docs/rag_evaluation_report.json": "RECOMMEND_STAGE",
+      "docs/real_dicom_dose_pair_evaluation.json": "RECOMMEND_STAGE",
+      "docs/recomputed_metric_consistency_audit.json": "RECOMMEND_STAGE",
+      "docs/retrospective_edge_metric_audit.json": "RECOMMEND_STAGE",
+      "docs/unet_failure_analysis.md": "RECOMMEND_STAGE",
+      "docs/unet_failure_analysis.json": "RECOMMEND_STAGE",
+      "docs/unet_provenance_audit.json": "RECOMMEND_STAGE",
+      "docs/unet_reconciliation_report.json": "RECOMMEND_STAGE",
+      "docs/dataset_validation_report.json": "RECOMMEND_STAGE",
+      "docs/validation_report.txt": "RECOMMEND_STAGE",
+      "docs/owner_review_readiness.md": "RECOMMEND_STAGE",
+      "docs/owner_review_readiness.json": "RECOMMEND_STAGE"
+    },
+    "excluded_and_ignored": {
+      "scratch/": "KEEP_IGNORED",
+      "data/": "KEEP_IGNORED",
+      "artifacts/": "KEEP_IGNORED",
+      "*.keras": "KEEP_IGNORED",
+      "*.dcm": "KEEP_IGNORED",
+      ".env": "KEEP_IGNORED"
+    }
+  },
+  "verification_summary": {
+    "test_suite_status": "PASS (89/89 passed in 49.431s)",
+    "git_diff_check": "PASS (Exit code 0)",
+    "checkpoint_hash_match": true,
+    "git_index_staged_count": 0,
+    "untracked_scratch_count": 0,
+    "untracked_data_count": 0,
+    "untracked_checkpoint_count": 0
+  }
+}

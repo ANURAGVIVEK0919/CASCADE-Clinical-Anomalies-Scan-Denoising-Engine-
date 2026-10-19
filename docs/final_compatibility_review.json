@@ -1,0 +1,152 @@
+{
+  "audit_metadata": {
+    "title": "CASCADE Final Compatibility Review Before Any Staging",
+    "timestamp": "2026-10-20T03:52:00Z",
+    "project_path": "D:\\CASCADE-Clinical-Anomalies-Scan-Denoising-Engine-",
+    "branch": "feat/model-rag-quality",
+    "head_commit": "0ede53e",
+    "frozen_checkpoint": "artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras",
+    "expected_checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "verified_checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "sha256_match": true,
+    "review_status": "COMPATIBILITY_AUDIT_COMPLETE"
+  },
+  "gate_1_pinecone_rag_engine_compatibility": {
+    "file": "pinecone_rag_engine.py",
+    "status": "COMPATIBLE_WITH_DOWNSTREAM_CONSUMERS",
+    "interface_contract": {
+      "method": "PineconeClinicalRAG.query_dense_rag(organ, severity='', user_query='', top_k=3)",
+      "signature_preserved": true,
+      "return_keys": [
+        "kb_references",
+        "differential_diagnosis",
+        "top_match_condition",
+        "similarity_score",
+        "vector_engine",
+        "matches_count",
+        "retrieval_mode",
+        "retrieved_chunks"
+      ]
+    },
+    "contract_modifications_vs_head": {
+      "synthetic_data_removal": "Deleted hardcoded DENSE_CLINICAL_DATASET and DenseEmbeddingGenerator (hash-based TF-IDF projection).",
+      "score_bonuses_eliminated": "Removed artificial +0.45 organ bonus and +0.35 severity bonus.",
+      "similarity_score_return_type": "Returns float (genuine cosine similarity) when index query succeeds; returns None when unconfigured or offline (previously defaulted to 0.95).",
+      "retrieval_mode_return_type": "Returns 'unconfigured' or 'unavailable' when offline (previously returned 'local_fallback')."
+    },
+    "downstream_consumer_audit": {
+      "medical_agent_py": {
+        "consumption_site": "clinical_rag_specialist_node() (L149) and human_radiologist_approval_node() (L189-195)",
+        "none_guarding": "Explicit check: 'if sim_score is not None: ... else: sim_score_str = \"Not Available (Guideline retrieval index unconfigured or offline)\"'. Safely handles None without TypeError or crash.",
+        "kb_references_guarding": "Fallback to 'No matching guidelines retrieved' when kb_refs is empty."
+      },
+      "app_py": {
+        "consumption_site": "Delegates multi-agent board calls to medical_agent; does not directly access similarity_score.",
+        "breaking_changes": "None."
+      },
+      "templates_index_html": {
+        "consumption_site": "Renders res.agent_consultation.consensus_report as markdown text (L1783).",
+        "ui_presentation": "Displays truthful offline message: 'Status: Research output — no authenticated clinical review recorded' and 'Not Available'. No synthetic 0.95 or fake confidence displayed."
+      }
+    },
+    "live_connectivity_claim": "No live Pinecone connection is claimed. Safely operates in verified offline/unconfigured state."
+  },
+  "gate_2_validate_models_on_dataset_compatibility": {
+    "file": "validate_models_on_dataset.py",
+    "status": "COMPATIBLE_STANDALONE",
+    "interface_contract": {
+      "function": "run_validation(data_dir=None, sample_size_per_organ=50, output_path=None)",
+      "cli_flags": ["--data-dir", "--sample-size", "--output"],
+      "cli_parsing_verified": true
+    },
+    "contract_modifications_vs_head": {
+      "path_discovery": "Replaced hardcoded data/separated_scans with configurable data_dir argument and CASCADE_DATA_DIR env fallback.",
+      "terminology_change": "Replaced 'severity' distribution keys ('Normal', 'Mild Anomaly', 'High Risk') with Candidate ROI status keys ('Candidate ROI Detected', 'No Candidate ROI Flagged').",
+      "paired_metric_guard": "PSNR and SSIM gains are computed only when clean ground-truth references exist in clean/ (paired_images_count > 0); prevents None addition errors."
+    },
+    "downstream_consumer_audit": {
+      "dependent_modules": "None. Zero other python files import or invoke validate_models_on_dataset.",
+      "reporting_nature": "Strictly reports candidate ROI detection rates as spatial flags, explicitly disclaiming disease diagnosis or clinical risk triage.",
+      "empty_data_behavior": "Gracefully prints '[!] No images found to validate' and returns cleanly without exception."
+    }
+  },
+  "gate_3_evaluate_data_compatibility": {
+    "file": "evaluate_data.py",
+    "status": "COMPATIBLE_STANDALONE_NO_SIDE_EFFECTS",
+    "interface_contract": {
+      "function": "evaluate_directory(data_dir=None, max_images=50)",
+      "cli_flags": ["--data-dir", "--max-images"],
+      "cli_parsing_verified": true
+    },
+    "contract_modifications_vs_head": {
+      "path_discovery": "Configurable via --data-dir and CASCADE_DATA_DIR environment variable.",
+      "reproducibility": "Added random.seed(42) for deterministic slice sampling; replaces unseeded random.shuffle.",
+      "output_behavior": "Strictly outputs to stdout (print statements). Zero file writes to disk; cannot overwrite existing files or modify medical data."
+    },
+    "downstream_consumer_audit": {
+      "dependent_modules": "None. Standalone CLI utility.",
+      "empty_data_behavior": "Gracefully prints '[!] No images found to evaluate' and returns cleanly."
+    }
+  },
+  "gate_4_historical_scripts_classification": {
+    "SAFE_TO_STAGE_REVIEW": [
+      "evaluate_residual_unet_v3.py",
+      "evaluate_residual_unet_native.py",
+      "evaluate_hu_calibrated_unet.py",
+      "evaluate_authentic_suite.py",
+      "validate_dataset_integrity.py",
+      "evaluate_models.py",
+      "evaluate_residual_dev.py"
+    ],
+    "NEEDS_OWNER_APPROVAL": [
+      "pinecone_rag_engine.py",
+      "validate_models_on_dataset.py",
+      "evaluate_data.py",
+      "execute_safe_cleanup.py",
+      "prepare_authentic_dataset.py",
+      "train_authentic_localization.py",
+      "train_hu_calibrated_unet.py",
+      "train_reproducible.py",
+      "train_residual_unet_native.py",
+      "train_residual_unet_v3.py",
+      "train_spatial_detector.py",
+      "train_unet_denoiser.py"
+    ],
+    "KEEP_IGNORED": [
+      "scratch/",
+      "data/",
+      "artifacts/",
+      "*.keras",
+      "*.dcm",
+      "*.dicom",
+      ".env"
+    ],
+    "EXCLUDE_FROM_COMMIT": [
+      "scratch/*",
+      "data/*",
+      "artifacts/*"
+    ]
+  },
+  "gate_5_verification_and_regression_evidence": {
+    "fresh_offline_test_command": "& 'venv\\Scripts\\python' -m unittest discover tests",
+    "fresh_test_suite_result": "PASS (89/89 passed in 50.178s, exit status 0)",
+    "git_diff_check": "PASS (Exit code 0, clean whitespace and formatting)",
+    "checkpoint_sha256": "bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea",
+    "checkpoint_verified_exact": true,
+    "validation_report_side_effect_audit": {
+      "file": "docs/validation_report.txt",
+      "overwritten_during_testing": false,
+      "mtime": "2026-10-19 16:37:11",
+      "empty_dataset_behavior": "Returns early at line 103 without opening or truncating the output file.",
+      "tested_safely_in_tempdir": true
+    },
+    "destructive_utilities_policy": {
+      "execute_safe_cleanup_py": "EXCLUDE_FROM_AUTOMATIC_STAGING (Requires explicit repository owner review and instruction prior to committing any file-deletion utility)"
+    },
+    "git_status": {
+      "staged_files_count": 0,
+      "modified_tracked_count": 7,
+      "clean_index": true
+    }
+  }
+}

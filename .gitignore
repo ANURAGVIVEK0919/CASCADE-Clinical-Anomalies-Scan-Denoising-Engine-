@@ -132,5 +132,13 @@ medical_ct_diagnostic_model.keras
 medical_ct_denoiser_full.keras
 medical_ct_denoiser_full_1epoch.keras
 
+# Medical Imaging Formats (DICOM / NIfTI)
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+
 # Local training and execution outputs
 output/
+artifacts/
+scratch/
