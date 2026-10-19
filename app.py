@@ -839,4 +839,4 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"[!] Warning: Pre-loading models encountered an error (fallbacks will be used): {e}")
 
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
