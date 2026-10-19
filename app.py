@@ -8,10 +8,14 @@ import base64
 from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
+import json
+import uuid
+import time
 from gradcam_utils import generate_gradcam, overlay_gradcam
 from medical_agent import ASCADEMedicalBoard
 from data_pipeline import CASCADEDICOMPipeline
 from aws_s3_storage import S3StorageVault, AWSCloudServicesManager
+from telemetry import get_telemetry
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,6 +29,13 @@ medical_board = ASCADEMedicalBoard()
 dicom_pipeline = CASCADEDICOMPipeline()
 s3_vault = S3StorageVault()
 aws_manager = AWSCloudServicesManager()
+
+def get_s3_vault():
+    """
+    Returns configured S3 vault or mock injected via app.config['S3_VAULT'].
+    Enables isolated unit testing without touching AWS network services.
+    """
+    return app.config.get('S3_VAULT') or s3_vault
 
 
 
@@ -60,14 +71,14 @@ def get_diagnostic_model():
         if os.path.exists(DIAGNOSTIC_MODEL_PATH):
             try:
                 from tensorflow.keras.saving import register_keras_serializable
-                
+
                 @register_keras_serializable()
                 def random_rot90(x):
                     # Return input unchanged during inference to prevent random fluctuations
                     return x
-                    
+
                 diagnostic_model = load_model(
-                    DIAGNOSTIC_MODEL_PATH, 
+                    DIAGNOSTIC_MODEL_PATH,
                     custom_objects={'random_rot90': random_rot90},
                     compile=False
                 )
@@ -81,7 +92,7 @@ def get_diagnostic_model():
 def process_image(image_path, clean_path=None):
     patient_metadata = None
     is_dicom = image_path.lower().endswith('.dcm') or image_path.lower().endswith('.dicom')
-    
+
     if is_dicom and PYDICOM_AVAILABLE:
         try:
             ds = pydicom.dcmread(image_path)
@@ -95,15 +106,15 @@ def process_image(image_path, clean_path=None):
                 'manufacturer': str(ds.get('Manufacturer', 'N/A')),
                 'modality': str(ds.get('Modality', 'CT'))
             }
-            
+
             # Format date nicely
             if patient_metadata['date'] and len(patient_metadata['date']) == 8:
                 d = patient_metadata['date']
                 patient_metadata['date'] = f"{d[:4]}-{d[4:6]}-{d[6:]}"
-            
+
             # Extract pixel array
             pixel_array = ds.pixel_array
-            
+
             # Apply min-max HU scaling to 0.0 - 1.0
             p_min = np.min(pixel_array)
             p_max = np.max(pixel_array)
@@ -111,7 +122,7 @@ def process_image(image_path, clean_path=None):
                 normalized_pixel_array = (pixel_array - p_min) / (p_max - p_min)
             else:
                 normalized_pixel_array = np.zeros_like(pixel_array, dtype=np.float32)
-            
+
             # Convert to 256x256 image
             img = Image.fromarray((normalized_pixel_array * 255).astype(np.uint8))
             img = img.resize((256, 256), Image.Resampling.BILINEAR)
@@ -125,11 +136,11 @@ def process_image(image_path, clean_path=None):
         # Standard image loading (PNG/JPG)
         img = load_img(image_path, target_size=(256, 256), color_mode='grayscale')
         img_array = img_to_array(img) / 255.0
-    
+
     # Denoise
     m = get_model()
     denoised_img = None
-    
+
     if m is not None:
         try:
             # Predict (input: 1, 256, 256, 1)
@@ -138,7 +149,7 @@ def process_image(image_path, clean_path=None):
             denoised_img = denoised_tensor[0]
         except Exception:
             m = None
-            
+
     if m is None or denoised_img is None:
         # Fallback NumPy local smoothing box-filter to simulate high-fidelity denoising
         # This keeps the app 100% operational even without downloading Git LFS weights
@@ -149,10 +160,10 @@ def process_image(image_path, clean_path=None):
         smoothed = smoothed / 10.0  # 3x3 local average
         # Apply a mild contrast enhancement and clamp output
         denoised_img = np.clip((smoothed - 0.05) * 1.05 + 0.05, 0.0, 1.0)
-    
+
     clean_found = False
     clean_array = None
-    
+
     # Check if a user-uploaded custom clean reference was provided
     if clean_path and os.path.exists(clean_path):
         try:
@@ -165,37 +176,67 @@ def process_image(image_path, clean_path=None):
 
     # Fallback to local dataset directory if not uploaded directly
     if not clean_found:
-        clean_dir = r"d:\Medical-Denoise-AI-CT-Scan-Restoration--main\Medical-Denoise-AI-CT-Scan-Restoration--main\data\unified_dataset\clean"
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        clean_dirs = [
+            os.path.join(base_dir, "data", "unified_dataset", "clean"),
+            os.path.join(base_dir, "data", "separated_scans")
+        ]
         filename = os.path.basename(image_path)
         if filename.startswith("temp_"):
             parts = filename.split("_")
             original_filename = "_".join(parts[2:])
         else:
             original_filename = filename
-            
-        clean_filename = original_filename.replace('_noisy', '_clean')
-        clean_filepath = os.path.join(clean_dir, clean_filename)
-        
-        if os.path.exists(clean_filepath):
-            try:
-                clean_img = load_img(clean_filepath, target_size=(256, 256), color_mode='grayscale')
-                clean_array = img_to_array(clean_img) / 255.0
-                clean_found = True
-            except Exception as e:
-                print(f"[!] Error loading clean scan reference from dataset: {e}")
-                clean_found = False
-            
+
+        clean_candidates = [
+            original_filename.replace('_noisy', '_clean'),
+            original_filename.replace('_noisy', '_clear'),
+            original_filename.replace('noisy', 'clean'),
+            original_filename.replace('noisy', 'clear')
+        ]
+
+        # 1. Search in unified_dataset/clean
+        unified_clean_dir = clean_dirs[0]
+        if os.path.exists(unified_clean_dir):
+            for candidate in clean_candidates:
+                cand_path = os.path.join(unified_clean_dir, candidate)
+                if os.path.exists(cand_path):
+                    try:
+                        clean_img = load_img(cand_path, target_size=(256, 256), color_mode='grayscale')
+                        clean_array = img_to_array(clean_img) / 255.0
+                        clean_found = True
+                        break
+                    except Exception as e:
+                        print(f"[!] Error loading clean scan reference from dataset: {e}")
+                        clean_found = False
+
+        # 2. If not found in unified, search separated_scans
+        if not clean_found and os.path.exists(clean_dirs[1]):
+            import glob
+            sep_dir = clean_dirs[1]
+            for candidate in clean_candidates:
+                matches = glob.glob(os.path.join(sep_dir, "**", candidate), recursive=True)
+                if matches and os.path.exists(matches[0]):
+                    try:
+                        clean_img = load_img(matches[0], target_size=(256, 256), color_mode='grayscale')
+                        clean_array = img_to_array(clean_img) / 255.0
+                        clean_found = True
+                        break
+                    except Exception as e:
+                        print(f"[!] Error loading clean scan reference from separated scans: {e}")
+                        clean_found = False
+
     if clean_found:
         # True scientific relative comparison against clinical ground truth!
         psnr_noisy = float(tf.image.psnr(clean_array, img_array, max_val=1.0).numpy())
         ssim_noisy = float(tf.image.ssim(tf.convert_to_tensor(clean_array), tf.convert_to_tensor(img_array), max_val=1.0).numpy())
-        
+
         psnr_restored = float(tf.image.psnr(clean_array, denoised_img, max_val=1.0).numpy())
         ssim_restored = float(tf.image.ssim(tf.convert_to_tensor(clean_array), tf.convert_to_tensor(denoised_img), max_val=1.0).numpy())
-        
+
         psnr_delta = psnr_restored - psnr_noisy
         ssim_delta = ssim_restored - ssim_noisy
-        
+
         # Improvement % based on PSNR delta relative to original noisy baseline
         improvement_pct = min(99.9, (psnr_delta / max(1e-5, psnr_noisy)) * 100)
     else:
@@ -212,7 +253,7 @@ def process_image(image_path, clean_path=None):
     diff_map = np.abs(img_array - denoised_img)
     if np.max(diff_map) > 0:
         diff_map = diff_map / np.max(diff_map)
-    
+
     return img_array, denoised_img, diff_map, {
         'psnr_noisy': psnr_noisy,
         'psnr_restored': psnr_restored,
@@ -228,82 +269,57 @@ def run_diagnostic_analyzer(img_array, organ_type, bbox=None, predicted_organ=No
     mean_val = float(np.mean(img_array))
     std_val = float(np.std(img_array))
     max_val = float(np.max(img_array))
-    
-    # Extract features from the ResNet Diagnostic Model's Bounding Box
-    resnet_detected_anomaly = False
-    if bbox is not None and len(bbox) == 4:
-        ymin, xmin, ymax, xmax = bbox
-        bbox_area = max(0.0, ymax - ymin) * max(0.0, xmax - xmin)
-        
-        # Clinical Identification: ResNet draws a larger bounding box (>4.5% area) for actual focal lesions.
-        # Normal anatomical landmarks tracked by the model have smaller bounding boxes (<4.5%).
-        if bbox_area > 0.045:
-            resnet_detected_anomaly = True
-    
-    filename_str = (filename or "").lower()
-    has_anomaly_hint = any(k in filename_str for k in ['high', 'risk', 'bleed', 'lesion', 'tumor'])
-    
+
+    # Target organ is determined primarily by AI model prediction, falling back to user selection
+    effective_organ = (predicted_organ or organ_type).lower()
+    organ_agreement = (predicted_organ.lower() == organ_type.lower()) if predicted_organ else True
+
+    # Extract and sanitize candidate Region of Interest (ROI) from ResNet Diagnostic Model
+    sanitized_bbox = None
+    has_candidate_roi = False
+    if bbox is not None and len(bbox) == 4 and all(np.isfinite(bbox)):
+        r_ymin, r_xmin, r_ymax, r_xmax = bbox
+        ymin = max(0.0, min(1.0, min(r_ymin, r_ymax)))
+        xmin = max(0.0, min(1.0, min(r_xmin, r_xmax)))
+        ymax = max(0.0, min(1.0, max(r_ymin, r_ymax)))
+        xmax = max(0.0, min(1.0, max(r_xmin, r_xmax)))
+        if (xmax - xmin) >= 0.01 and (ymax - ymin) >= 0.01:
+            sanitized_bbox = [round(ymin, 4), round(xmin, 4), round(ymax, 4), round(xmax, 4)]
+            has_candidate_roi = True
+    bbox = sanitized_bbox
+
     findings = []
-    severity = "Normal"  # Normal, Mild Anomaly, High Risk
-    diagnostic_text = ""
     recommendations = []
-    
-    if organ_type.lower() == 'brain':
-        if has_anomaly_hint or resnet_detected_anomaly:
-            severity = "High Risk"
-            diagnostic_text = "AI detection indicates a potential hyperdense focal region in the right temporal lobe, suggestive of acute intracranial hemorrhage or calcified space-occupying lesion."
-            findings.append("Hyperdense mass detected (possible bleed/lesion)")
-            recommendations.append("Immediate Non-Contrast CT head follow-up")
-            recommendations.append("Neurological consultation")
 
-        else:
-            severity = "Normal"
-            diagnostic_text = "Ventricular size and sulcal patterns are within normal limits for age. No midline shift, acute hemorrhage, or large territorial infarct detected."
-            findings.append("Symmetric intracranial structures")
-            recommendations.append("Standard routine follow-up")
-            
-    elif organ_type.lower() == 'chest':
-        if has_anomaly_hint or resnet_detected_anomaly:
-            severity = "High Risk"
-            diagnostic_text = "A dense irregular focal opacity is identified in the left upper lung field with spiculated margins. Pleural thickening is noted."
-            findings.append("Spiculated pulmonary nodule (highly suspicious)")
-            recommendations.append("Chest CT with contrast & pulmonary biopsy consultation")
-            recommendations.append("Pulmonology referral")
+    if not organ_agreement and predicted_organ:
+        findings.append(f"Organ discrepancy noted: Model classified as {predicted_organ.capitalize()}, user selected {organ_type.capitalize()}")
 
-        else:
-            severity = "Normal"
-            diagnostic_text = "Tracheobronchial tree is patent. Lungs are clear without focal consolidation, pleural effusion, or suspicious pulmonary nodules."
-            findings.append("Clear pulmonary parenchyma")
-            recommendations.append("Routine annual preventive screening")
-            
-    elif organ_type.lower() == 'abdomen':
-        if has_anomaly_hint or resnet_detected_anomaly:
-            severity = "High Risk"
-            diagnostic_text = "Focal hypodense lesion (approx. 2.4cm) with irregular borders seen in Segment VI of the liver. Mild splenomegaly is also noted."
-            findings.append("Hypodense hepatic lesion (possible cyst/hemangioma/neoplasm)")
-            recommendations.append("Abdominal MRI with contrast for characterization")
-            recommendations.append("Liver function panel test")
-
-        else:
-            severity = "Normal"
-            diagnostic_text = "Liver, spleen, pancreas, gallbladder, and kidneys are normal in size and attenuation. No free fluid, ascites, or pathologic lymphadenopathy."
-            findings.append("Normal solid abdominal organs")
-            recommendations.append("No further abdominal imaging required")
-            
+    # Neutralized Screening Status: Candidate ROI presence rather than unsupported clinical disease diagnoses
+    if has_candidate_roi:
+        severity = "Candidate ROI Detected"
+        diagnostic_text = (
+            f"Automated candidate region of interest localized in {effective_organ} scan. "
+            f"Non-diagnostic research screening observation; requires qualified radiologist evaluation."
+        )
+        ymin, xmin, ymax, xmax = bbox
+        findings.append(f"Stage-2 ResNet candidate ROI localized at [{ymin:.2f}, {xmin:.2f}, {ymax:.2f}, {xmax:.2f}] (experimental research localization)")
+        recommendations.append("Investigational candidate ROI; correlate with primary PACS study and patient history")
+        recommendations.append("Qualified radiologist interpretation required (non-diagnostic AI tool)")
     else:
-        if has_anomaly_hint:
-            severity = "High Risk"
-            diagnostic_text = "Focal tissue irregularity identified in processed slice requiring immediate clinical correlation."
-            findings.append("Focal tissue anomaly detected")
-            recommendations.append("Immediate clinical follow-up")
-        else:
-            severity = "Normal"
-            diagnostic_text = "Scan features are within physiological limits. No acute focal abnormality detected in the processed region."
-            findings.append("Normal anatomical features")
-            recommendations.append("Routine monitoring")
-        
+        severity = "No Candidate ROI Flagged"
+        diagnostic_text = (
+            f"No candidate region of interest localized above threshold in {effective_organ} scan. "
+            f"Non-diagnostic research observation; does not rule out underlying pathology."
+        )
+        findings.append("No candidate ROI localized above spatial threshold")
+        recommendations.append("Standard clinical image review protocol")
+        recommendations.append("Non-diagnostic AI research tool")
+
     return {
         'organ': organ_type.capitalize(),
+        'predicted_organ': predicted_organ.capitalize() if predicted_organ else organ_type.capitalize(),
+        'effective_organ': effective_organ.capitalize(),
+        'organ_agreement': organ_agreement,
         'severity': severity,
         'diagnostic_text': diagnostic_text,
         'findings': findings,
@@ -313,7 +329,12 @@ def run_diagnostic_analyzer(img_array, organ_type, bbox=None, predicted_organ=No
             'std': round(std_val, 4)
         },
         'bbox': bbox,
-        'predicted_organ': predicted_organ.capitalize() if predicted_organ else organ_type.capitalize()
+        'is_emergency': None,
+        'emergency_status': "Not Assessed (No Certified Pathology Classifier)",
+        'human_review_status': "Pending Human Review",
+        'is_human_verified': False,
+        'is_heuristic_pathology': True,
+        'pathology_note': "Research demonstration only. CASCADE Stage-2 model performs organ classification and candidate ROI localization. It is not an FDA-cleared diagnostic device and does not diagnose disease or emergency conditions."
     }
 
 def array_to_base64(arr):
@@ -347,7 +368,7 @@ def process():
     clean_files = request.files.getlist('clean_images')
     has_clean_tags = request.form.getlist('has_clean')
     organ_tags = request.form.getlist('organs')
-    
+
     # Fallback to single 'image' upload if 'images' is not provided
     if not uploaded_files or uploaded_files[0].filename == '':
         single_file = request.files.get('image')
@@ -356,21 +377,21 @@ def process():
             organ_tags = [request.form.get('organ', 'chest')]
             clean_files = [request.files.get('clean_image')]
             has_clean_tags = ['true' if request.files.get('clean_image') else 'false']
-            
+
     if not uploaded_files or uploaded_files[0].filename == '':
         return jsonify({'error': 'No images uploaded'}), 400
-        
+
     results = []
-    
+
     for i, file in enumerate(uploaded_files):
         # Determine organ type
         organ = organ_tags[i] if i < len(organ_tags) else 'chest'
         organ = organ.lower()
-        
+
         # Save temporary files
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{i}_{file.filename}")
         file.save(filepath)
-        
+
         clean_filepath = None
         has_clean = has_clean_tags[i] == 'true' if i < len(has_clean_tags) else False
         if has_clean and i < len(clean_files):
@@ -378,119 +399,86 @@ def process():
             if clean_file and clean_file.filename != '':
                 clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_clean_{i}_{clean_file.filename}")
                 clean_file.save(clean_filepath)
-        
+
         try:
             noisy, denoised, diff, metrics, patient_metadata = process_image(filepath, clean_filepath)
-            
+
             if noisy is None:
                 continue
-                
+
             # Run diagnostic model inference (Option 1)
             m_diag = get_diagnostic_model()
             predicted_organ = None
             bbox = None
-            confidence = 90.0
-            top2 = [{"label": organ.capitalize(), "prob": 90.0}]
+            model_confidence = None
+            top2 = []
             gradcam_overlay = None
-            
+            organ_agreement = True
+            organ_warning = None
+
             if m_diag is not None:
                 try:
                     # Input tensor is (1, 256, 256, 1)
                     input_tensor = np.expand_dims(denoised, axis=0)
-                    class_pred, bbox_pred = m_diag.predict(input_tensor)
-                    
-                    class_idx = np.argmax(class_pred[0])
+                    class_pred, bbox_pred = m_diag.predict(input_tensor, verbose=0)
+
+                    class_idx = int(np.argmax(class_pred[0]))
                     class_map = {0: 'chest', 1: 'brain', 2: 'abdomen'}
-                    
-                    # Trust the User UI selection for the Organ since the ResNet is heavily biased towards Chest
-                    predicted_organ = organ
-                    
-                    # Extract bbox and ensure limits [ymin, xmin, ymax, xmax] are between 0.0 and 1.0
-                    ymin, xmin, ymax, xmax = bbox_pred[0].tolist()
-                    ymin = max(0.0, min(1.0, ymin))
-                    xmin = max(0.0, min(1.0, xmin))
-                    ymax = max(0.0, min(1.0, ymax))
-                    xmax = max(0.0, min(1.0, xmax))
-                    bbox = [ymin, xmin, ymax, xmax]
-                    
-                    organ_to_idx = {'chest': 0, 'brain': 1, 'abdomen': 2}
-                    selected_idx = organ_to_idx.get(organ, class_idx)
-                    
-                    # Calculate Confidence for the selected organ
-                    confidence = float(class_pred[0][selected_idx]) * 100.0
-                    
+                    predicted_organ = class_map.get(class_idx, 'chest')
+
+                    # Independent confidence for predicted organ
+                    model_confidence = float(class_pred[0][class_idx]) * 100.0
+
+                    # Top-2 prediction distribution
                     organ_labels = ["Chest", "Brain", "Abdomen"]
                     top2_idx = np.argsort(class_pred[0])[::-1][:2]
                     top2 = [
                         {"label": organ_labels[idx], "prob": round(float(class_pred[0][idx]) * 100.0, 1)}
                         for idx in top2_idx
                     ]
-                    
-                    # Generate GradCAM Heatmap corresponding to the selected organ type
+
+                    # Organ agreement verification
+                    organ_agreement = (predicted_organ.lower() == organ.lower())
+                    if not organ_agreement:
+                        organ_warning = f"Selected organ is '{organ.capitalize()}', but AI classified this scan as '{predicted_organ.capitalize()}' (uncalibrated model score: {model_confidence:.1f}%)."
+                    elif model_confidence < 60.0:
+                        organ_warning = f"Low model classification score ({model_confidence:.1f}% uncalibrated). Findings require clinical correlation."
+
+                    # Extract and sanitize candidate ROI bounding box
+                    raw_coords = bbox_pred[0].tolist()
+                    if len(raw_coords) == 4 and all(np.isfinite(raw_coords)):
+                        r_ymin, r_xmin, r_ymax, r_xmax = raw_coords
+                        ymin = max(0.0, min(1.0, min(r_ymin, r_ymax)))
+                        xmin = max(0.0, min(1.0, min(r_xmin, r_xmax)))
+                        ymax = max(0.0, min(1.0, max(r_ymin, r_ymax)))
+                        xmax = max(0.0, min(1.0, max(r_xmin, r_xmax)))
+                        if (xmax - xmin) >= 0.01 and (ymax - ymin) >= 0.01:
+                            bbox = [round(ymin, 4), round(xmin, 4), round(ymax, 4), round(xmax, 4)]
+                        else:
+                            bbox = None
+                    else:
+                        bbox = None
+
+                    # Generate Grad-CAM Saliency Map explaining the model's predicted organ classification
                     denoised_uint8 = np.uint8(np.squeeze(denoised, axis=-1) * 255)
-                    heatmap = generate_gradcam(m_diag, denoised, selected_idx)
+                    heatmap = generate_gradcam(m_diag, denoised, class_idx)
                     gradcam_overlay = overlay_gradcam(denoised_uint8, heatmap, alpha=0.45)
-                    
+
                 except Exception as e:
                     print(f"[!] Error running diagnostic inference: {e}")
                     m_diag = None
-                    
-            if m_diag is None or bbox is None:
-                # Dynamic fallback localizer based on intensity profile!
-                if organ == 'abdomen':
-                    # Look for hypodense lesion (low values), ignoring black background (intensity < 0.08)
-                    min_val = 1.0
-                    best_r, best_c = 128, 128
-                    for r in range(48, 208, 16):
-                        for c in range(48, 208, 16):
-                            mean_patch = float(np.mean(denoised[r-24:r+24, c-24:c+24]))
-                            # Only consider patches that are within the actual patient scan body
-                            if mean_patch > 0.08 and mean_patch < min_val:
-                                min_val = mean_patch
-                                best_r, best_c = r, c
-                    ymin, xmin, ymax, xmax = (best_r-32)/256, (best_c-32)/256, (best_r+32)/256, (best_c+32)/256
-                else:
-                    # Look for hyperdense lesion (high values)
-                    max_val = 0.0
-                    best_r, best_c = 128, 128
-                    for r in range(48, 208, 16):
-                        for c in range(48, 208, 16):
-                            mean_patch = float(np.mean(denoised[r-24:r+24, c-24:c+24]))
-                            if mean_patch > max_val:
-                                max_val = mean_patch
-                                best_r, best_c = r, c
-                    ymin, xmin, ymax, xmax = (best_r-32)/256, (best_c-32)/256, (best_r+32)/256, (best_c+32)/256
-                bbox = [ymin, xmin, ymax, xmax]
-                
-                # Mock fallback confidence & top2
-                confidence = 88.5
-                top2 = [
-                    {"label": organ.capitalize(), "prob": 88.5},
-                    {"label": "Chest" if organ != "chest" else "Brain", "prob": 8.2}
-                ]
-                
-                # Generate a mock visual heatmap centered around the fallback BBox!
-                fallback_heatmap = np.zeros((256, 256, 3), dtype=np.uint8)
-                center_y = int((ymin + ymax) * 128)
-                center_x = int((xmin + xmax) * 128)
-                # Create a radial gradient (glowing circles) around the center
-                for r in range(256):
-                    for c in range(256):
-                        dist = np.sqrt((r - center_y)**2 + (c - center_x)**2)
-                        if dist < 64:
-                            intensity = int((1.0 - dist / 64.0) * 255)
-                            fallback_heatmap[r, c, 0] = intensity # Red channel
-                            fallback_heatmap[r, c, 1] = int(intensity * 0.3) # Orange secondary
-                
-                denoised_uint8 = np.uint8(np.squeeze(denoised, axis=-1) * 255)
-                gradcam_overlay = overlay_gradcam(denoised_uint8, fallback_heatmap, alpha=0.45)
-            
+                    predicted_organ = organ
+                    organ_warning = "Diagnostic AI model inference encountered an error."
+            else:
+                predicted_organ = organ
+                organ_warning = "Diagnostic AI model offline; displaying standard imaging mode."
+
             # Run diagnostic analyzer
             diagnosis = run_diagnostic_analyzer(denoised, organ, bbox, predicted_organ, filename=file.filename)
-            
+
             # 1. Execute LangGraph Multi-Agent Board Consultation
             scan_context = {
-                'organ': organ.capitalize(),
+                'organ': (predicted_organ or organ).capitalize(),
                 'severity': diagnosis['severity'],
                 'psnr_delta': metrics['psnr_delta'],
                 'ssim_delta': metrics['ssim_delta'],
@@ -501,39 +489,53 @@ def process():
                 scan_context=scan_context,
                 user_query="Multi-Agent Automated Scan Diagnostic & Denoising Assessment"
             )
-            
+
             # 2. Automated Background DICOM ETL Data Pipeline Execution
             try:
                 etl_summary = dicom_pipeline.run_pipeline()
             except Exception as e:
                 print(f"[!] Background DICOM ETL error: {e}")
                 etl_summary = {"status": "Executed (Local Fallback)", "data_lake_directory": "data/pipeline_output"}
-                
-            # 3. Automated Background AWS Cloud Sync (AWS S3 + CloudWatch + EC2)
-            try:
-                patient_id_val = (patient_metadata and patient_metadata.get('id')) or 'ACC-984210'
-                aws_cloud_res = aws_manager.process_cloud_pacs_event(
-                    local_filepath=filepath,
-                    patient_id=patient_id_val,
-                    organ=organ.capitalize(),
-                    severity=diagnosis['severity']
-                )
-            except Exception as e:
-                print(f"[!] Background AWS Cloud Sync error: {e}")
-                aws_cloud_res = {"status": "Simulated Cloud Sync Active"}
-            
+
+            # 3. Automated Background AWS Cloud Status (Safe, truthful local mode representation)
+            # Raw scan files containing potential PHI are never auto-uploaded to cloud storage
+            aws_cloud_res = {
+                "status": "Local PACS Mode (Cloud Storage Offline)",
+                "aws_services": {
+                    "1_s3_storage": {
+                        "status": "Unavailable",
+                        "message": "Automatic cloud upload of raw input scans is disabled. Artifacts must be synced explicitly via S3 vault.",
+                        "storage_mode": "Offline / Local Storage Only"
+                    },
+                    "2_ec2_server": {
+                        "status": "Healthy",
+                        "hosting_environment": "Local PACS Engine"
+                    },
+                    "3_cloudwatch_logging": {
+                        "status": "Local Logging Active",
+                        "log_stream": "/local/cascade/pacs-engine"
+                    }
+                }
+            }
+
             results.append({
                 'name': file.filename,
                 'organ': organ.capitalize(),
+                'predicted_organ': predicted_organ.capitalize() if predicted_organ else organ.capitalize(),
+                'organ_agreement': organ_agreement,
+                'organ_warning': organ_warning,
+                'confidence': round(model_confidence, 1) if model_confidence is not None else None,
+                'confidence_label': 'Uncalibrated Model Score',
+                'top2_predictions': top2,
                 'noisy': array_to_base64(noisy),
                 'denoised': array_to_base64(denoised),
                 'diff': array_to_base64(diff),
                 'metrics': metrics,
                 'diagnosis': diagnosis,
                 'dicom_metadata': patient_metadata,
-                'confidence': round(confidence, 1),
-                'top2_predictions': top2,
                 'gradcam_overlay': gradcam_overlay,
+                'gradcam_type': 'Organ Saliency Map',
+                'gradcam_note': 'Explains convolutional features supporting organ classification; not a disease or lesion localization map.',
                 'agent_consultation': agent_consultation,
                 'etl_summary': etl_summary,
                 'aws_cloud_res': aws_cloud_res
@@ -544,10 +546,10 @@ def process():
                 os.remove(filepath)
             if clean_filepath and os.path.exists(clean_filepath):
                 os.remove(clean_filepath)
-                
+
     if not results:
         return jsonify({'error': 'Failed to process any CT scans. Ensure you upload valid image files.'}), 500
-        
+
     return jsonify({
         'results': results
     })
@@ -567,32 +569,36 @@ def copilot_chat():
         'findings': ['Hyperdense region identified']
     })
     user_query = data.get('query', '')
-    
+
     response = medical_board.consult(scan_context, user_query)
     return jsonify(response)
 
 @app.route('/api/copilot/approve', methods=['POST'])
 def copilot_approve():
     """
-    Human-in-the-Loop (HITL) Radiologist Approval & Verification Endpoint.
+    Demo Review Acknowledgement Endpoint.
+    Clinical Safety Note: Genuine clinical sign-off is unsupported because the platform does
+    not incorporate an authenticated clinician identity provider or authorized credentialing
+    mechanism. This endpoint records only an unauthenticated demo acknowledgement.
+    is_human_verified and reviewer_identity_verified are strictly False on the server.
     """
     data = request.json or {}
-    scan_context = data.get('scan_context', {
-        'organ': 'Brain',
-        'severity': 'High Risk',
-        # FIX: values must come from computation only.
-        'psnr_delta': None,
-        'ssim_delta': None,
-        'findings': ['Hyperdense region identified']
-    })
-    physician_name = data.get('physician_name', 'Dr. Vivek, M.D.')
-    hitl_notes = data.get('hitl_notes', 'Confirmed AI reconstructed clean scan & BBox annotations.')
-    
+    scan_context = data.get('scan_context', {})
+    if not scan_context:
+        scan_context = {
+            'organ': 'Brain',
+            'severity': 'No Candidate ROI Flagged',
+            'psnr_delta': None,
+            'ssim_delta': None,
+            'findings': ['Demonstration scan observation']
+        }
+
+    hitl_notes = data.get('hitl_notes', 'Demo user acknowledged review of reconstructed scan.')
+
     response = medical_board.consult(
         scan_context=scan_context,
-        user_query="Radiologist Sign-Off Verification",
-        is_verified=True,
-        physician_name=physician_name,
+        user_query="Demo Review Acknowledgement",
+        review_acknowledged=True,
         hitl_notes=hitl_notes
     )
     return jsonify(response)
@@ -608,24 +614,192 @@ def run_pipeline_api():
 @app.route('/api/s3/upload', methods=['POST'])
 def s3_upload_api():
     """
-    Orchestrates 3 AWS Cloud Services: AWS S3 Storage, AWS SQS Triage Queue, and AWS DynamoDB Audit Log.
+    CASCADE S3 Artifact Storage Vault Endpoint.
+    Accepts real generated CASCADE artifacts (restored_image, gradcam_overlay, diff_map, report_json).
+    Strictly forbids raw server filesystem paths, path traversal, and unapproved artifact types.
+    Enforces maximum upload bounds (10MB) and validates image signatures / JSON schema.
+    Applies server-generated safe artifact keys with AES256 server-side encryption.
     """
     data = request.json or {}
-    filename = data.get('filename', 'scan_report.png')
-    patient_id = data.get('patient_id', 'ACC-984210')
-    organ = data.get('organ', 'Brain')
-    severity = data.get('severity', 'High Risk')
-    
-    # Save a temporary mock file if needed
-    temp_file = os.path.join(app.config['UPLOAD_FOLDER'], f"s3_sync_{filename}")
-    with open(temp_file, 'w') as f:
-        f.write("CASCADE Clinical Scan Artifact Vault Record")
-        
-    psnr_gain = data.get('psnr_gain', None)
-    result = aws_manager.process_cloud_pacs_event(temp_file, patient_id, organ, severity, psnr_gain=psnr_gain)
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
-        
+    telemetry = get_telemetry()
+    corr_id = telemetry.new_correlation_id()
+    telemetry.start_trace(correlation_id=corr_id, operation_name="s3_artifact_upload")
+
+    artifact_type = data.get('artifact_type', 'restored_image')
+    payload = data.get('payload')
+
+    from aws_s3_storage import ALLOWED_ARTIFACT_TYPES, MAX_ARTIFACT_SIZE_BYTES
+
+    # 1. Validate artifact type against approved workflow types
+    if artifact_type not in ALLOWED_ARTIFACT_TYPES:
+        telemetry.finish_trace(corr_id, final_status="FAILED", error_category="UNSUPPORTED_ARTIFACT_TYPE")
+        return jsonify({
+            "status": "Failed",
+            "error": f"Unsupported artifact type '{artifact_type}'. Allowed types: {list(ALLOWED_ARTIFACT_TYPES.keys())}"
+        }), 400
+
+    # 2. Grad-CAM explanation integrity check (no fabricated overlays)
+    if artifact_type == 'gradcam_overlay' and (payload is None or payload == '' or payload == 'null'):
+        telemetry.finish_trace(corr_id, final_status="FAILED", error_category="EXPLANATION_UNAVAILABLE")
+        return jsonify({
+            "status": "Failed",
+            "error": "Grad-CAM explanation is unavailable for this scan. Refusing to upload placeholder as real explanation."
+        }), 400
+
+    # 3. Prevent empty or missing payloads
+    if not payload:
+        telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_PAYLOAD")
+        return jsonify({
+            "status": "Failed",
+            "error": "Artifact payload is required. Must provide valid base64 image bytes or structured report JSON."
+        }), 400
+
+    # 4. Parse and validate payload bytes
+    payload_bytes = None
+    MAX_BASE64_CHAR_LEN = int(MAX_ARTIFACT_SIZE_BYTES * 1.37) + 2048
+
+    if artifact_type in ['restored_image', 'gradcam_overlay', 'diff_map']:
+        if not isinstance(payload, str):
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_BASE64")
+            return jsonify({"status": "Failed", "error": "Image artifact payload must be a base64-encoded string."}), 400
+
+        # Enforce base64 string length limit before decoding to account for expansion
+        if len(payload) > MAX_BASE64_CHAR_LEN:
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="PAYLOAD_TOO_LARGE")
+            return jsonify({
+                "status": "Failed",
+                "error": f"Payload text length ({len(payload)} chars) exceeds maximum allowable limit."
+            }), 413
+
+        # Strip data URL prefix if present (e.g., data:image/png;base64,...)
+        b64_str = payload
+        if ',' in b64_str and ('base64' in b64_str[:50]):
+            b64_str = b64_str.split(',', 1)[1]
+
+        try:
+            payload_bytes = base64.b64decode(b64_str)
+        except Exception as e:
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_BASE64")
+            return jsonify({"status": "Failed", "error": "Malformed or corrupted base64 encoding."}), 400
+
+        # Enforce maximum binary size immediately before image parsing
+        if len(payload_bytes) > MAX_ARTIFACT_SIZE_BYTES:
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="PAYLOAD_TOO_LARGE")
+            return jsonify({
+                "status": "Failed",
+                "error": f"Payload size ({len(payload_bytes)} bytes) exceeds maximum allowable limit of {MAX_ARTIFACT_SIZE_BYTES} bytes."
+            }), 413
+
+        # Safe binary verification: check magic header and verify structure with safe image parser
+        if len(payload_bytes) < 8 or not (payload_bytes.startswith(b'\x89PNG\r\n\x1a\n') or payload_bytes.startswith(b'\xff\xd8\xff')):
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_IMAGE_FORMAT")
+            return jsonify({"status": "Failed", "error": "Decoded payload does not match valid image signature (PNG or JPEG required)."}), 400
+
+        try:
+            with Image.open(BytesIO(payload_bytes)) as img_verifier:
+                img_verifier.verify()
+                if img_verifier.format not in ['PNG', 'JPEG']:
+                    telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_IMAGE_FORMAT")
+                    return jsonify({"status": "Failed", "error": f"Image format '{img_verifier.format}' is not supported. PNG and JPEG only."}), 400
+        except Exception as e:
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_IMAGE_FORMAT")
+            return jsonify({"status": "Failed", "error": "Corrupted or malformed image binary payload."}), 400
+
+    elif artifact_type == 'report_json':
+        ALLOWED_REPORT_FIELDS = {
+            'consensus_report', 'differential_diagnosis', 'is_emergency', 'emergency_status',
+            'hitl_status', 'is_human_verified', 'engine', 'organ', 'severity',
+            'findings', 'recommendations', 'metrics', 'timestamp',
+            'review_acknowledged', 'review_status', 'reviewer_identity_verified'
+        }
+        ALLOWED_METRICS_KEYS = {
+            'psnr_baseline_db', 'psnr_restored_db', 'psnr_gain_db',
+            'ssim_baseline', 'ssim_restored', 'ssim_gain',
+            'psnr_noisy', 'psnr_restored', 'psnr_delta',
+            'ssim_noisy', 'ssim_delta', 'noise_reduction_pct'
+        }
+
+        parsed_data = None
+        if isinstance(payload, dict):
+            parsed_data = payload
+        elif isinstance(payload, str):
+            if len(payload) > MAX_BASE64_CHAR_LEN:
+                telemetry.finish_trace(corr_id, final_status="FAILED", error_category="PAYLOAD_TOO_LARGE")
+                return jsonify({"status": "Failed", "error": "Report payload text length exceeds maximum limit."}), 413
+            try:
+                parsed_data = json.loads(payload)
+            except Exception as e:
+                telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_PAYLOAD")
+                return jsonify({"status": "Failed", "error": "Report payload is not valid JSON."}), 400
+        else:
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_PAYLOAD")
+            return jsonify({"status": "Failed", "error": "Report payload must be a JSON object or string."}), 400
+
+        if not isinstance(parsed_data, dict):
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_PAYLOAD")
+            return jsonify({"status": "Failed", "error": "Report payload must evaluate to a JSON object dictionary."}), 400
+
+        # Strict allowlist sanitization: strip any field not explicitly permitted
+        sanitized_report = {}
+        for k, v in parsed_data.items():
+            if k in ALLOWED_REPORT_FIELDS:
+                if k == 'metrics' and isinstance(v, dict):
+                    sanitized_report['metrics'] = {
+                        mk: mv for mk, mv in v.items()
+                        if mk in ALLOWED_METRICS_KEYS and (isinstance(mv, (int, float, type(None))))
+                    }
+                elif isinstance(v, (str, int, float, bool, type(None))):
+                    sanitized_report[k] = v
+                elif isinstance(v, list):
+                    sanitized_report[k] = [str(item) for item in v if isinstance(item, (str, int, float))]
+
+        # Safety Gate: Client cannot assert genuine clinical verification or emergency triage
+        sanitized_report['is_human_verified'] = False
+        sanitized_report['reviewer_identity_verified'] = False
+        sanitized_report['is_emergency'] = None
+        sanitized_report['emergency_status'] = "Not Assessed (No Certified Pathology Classifier)"
+
+        if not sanitized_report:
+            telemetry.finish_trace(corr_id, final_status="FAILED", error_category="INVALID_PAYLOAD")
+            return jsonify({"status": "Failed", "error": "Report payload contains no valid, approved clinical report fields."}), 400
+
+        payload_bytes = json.dumps(sanitized_report, indent=2).encode('utf-8')
+
+    # 5. Bound maximum binary payload size
+    if len(payload_bytes) > MAX_ARTIFACT_SIZE_BYTES:
+        telemetry.finish_trace(corr_id, final_status="FAILED", error_category="PAYLOAD_TOO_LARGE")
+        return jsonify({
+            "status": "Failed",
+            "error": f"Payload size ({len(payload_bytes)} bytes) exceeds maximum allowable limit of {MAX_ARTIFACT_SIZE_BYTES} bytes."
+        }), 413
+
+    # 6. Upload through dependency-injected S3 Vault
+    vault = get_s3_vault()
+    upload_start = time.time()
+    result = vault.upload_artifact(
+        payload_bytes=payload_bytes,
+        artifact_type=artifact_type,
+        request_id=corr_id
+    )
+    upload_duration = time.time() - upload_start
+
+    stage_status = "SUCCESS" if result.get("status") == "Success" else ("SKIPPED" if result.get("status") == "Unavailable" else "FAILED")
+    telemetry.record_stage(
+        corr_id,
+        "s3_artifact_upload",
+        upload_duration,
+        status=stage_status,
+        details={
+            "artifact_type": artifact_type,
+            "artifact_id": result.get("artifact_id"),
+            "size_bytes": len(payload_bytes),
+            "storage_mode": result.get("storage_mode")
+        }
+    )
+
+    final_status = "COMPLETED" if result.get("status") in ["Success", "Unavailable"] else "FAILED"
+    telemetry.finish_trace(corr_id, final_status=final_status)
+
     return jsonify(result)
 
 @app.route('/metrics', methods=['GET'])
@@ -664,5 +838,5 @@ if __name__ == '__main__':
         print("[+] Models pre-loaded successfully and cached in RAM.")
     except Exception as e:
         print(f"[!] Warning: Pre-loading models encountered an error (fallbacks will be used): {e}")
-        
+
     app.run(debug=True)

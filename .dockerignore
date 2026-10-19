@@ -15,3 +15,18 @@ static/uploads/*
 docker-compose.yml
 Dockerfile
 .dockerignore
+
+# Environment and credential files
+.env
+.env.*
+*.env
+*.env.*
+.env.example
+
+# Cloud and cryptographic credentials
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+.aws/

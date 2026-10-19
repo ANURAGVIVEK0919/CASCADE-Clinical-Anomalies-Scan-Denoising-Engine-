@@ -17,23 +17,23 @@
             --font-size-2xl: 22.4px;
             --font-size-3xl: 24px;
             --font-size-4xl: 32px;
-            
+
             --color-text-primary: #f8f8f8;
             --color-text-secondary: #a7aeb5;
             --color-text-tertiary: #84888b;
             --color-surface-base: #000000;
             --color-surface-raised: #131313;
             --color-surface-muted: #ffffff;
-            
+
             --radius-xs: 6px;
             --radius-sm: 12px;
             --radius-md: 20px;
             --radius-lg: 72px;
-            
+
             --motion-instant: 3ms;
             --motion-fast: 200ms;
             --motion-normal: 300ms;
-            
+
             /* Spacing Tokens */
             --space-1: 2.8px;
             --space-2: 4px;
@@ -43,14 +43,14 @@
             --space-6: 14px;
             --space-7: 16px;
             --space-8: 20px;
-            
+
             /* ACCENT & CLINICAL TOKENS */
             --primary: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.45);
             --secondary: #a855f7;
             --secondary-glow: rgba(168, 85, 247, 0.35);
             --border: rgba(255, 255, 255, 0.08);
-            
+
             /* Severity Colors */
             --normal: #10b981;
             --normal-glow: rgba(16, 185, 129, 0.15);
@@ -109,7 +109,7 @@
             content: '';
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(99, 102, 241, 0.012) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(99, 102, 241, 0.012) 1px, transparent 1px);
             background-size: 36px 36px;
@@ -120,7 +120,7 @@
         .container { max-width: 1100px; width: 92%; margin-top: 3.5rem; position: relative; z-index: 10; }
 
         header { text-align: center; margin-bottom: 3rem; }
-        
+
         /* Pulse System Pill */
         .system-status-pill {
             display: inline-flex;
@@ -172,7 +172,7 @@
             border-top: 1.5px solid rgba(255, 255, 255, 0.12); /* Subtle glass highlight */
             border-radius: var(--radius-md);
             padding: var(--space-8);
-            box-shadow: 
+            box-shadow:
                 0 30px 60px -15px rgba(0, 0, 0, 0.8),
                 0 0 40px -10px rgba(99, 102, 241, 0.05),
                 inset 0 1px 0 rgba(255, 255, 255, 0.02);
@@ -181,7 +181,7 @@
         }
         .main-card:hover {
             border-color: rgba(99, 102, 241, 0.25);
-            box-shadow: 
+            box-shadow:
                 0 35px 70px -15px rgba(0, 0, 0, 0.9),
                 0 0 40px -5px rgba(99, 102, 241, 0.08);
         }
@@ -260,7 +260,7 @@
             transition: all var(--motion-fast) cubic-bezier(0.4, 0, 0.2, 1);
             padding: 1.5rem;
             text-align: center;
-            box-shadow: 
+            box-shadow:
                 inset 0 0 30px rgba(0, 0, 0, 0.8),
                 0 4px 20px rgba(0, 0, 0, 0.4);
             position: relative;
@@ -291,7 +291,7 @@
             border-color: rgba(99, 102, 241, 0.4);
             background: rgba(11, 15, 26, 0.6);
             transform: translateY(-2px);
-            box-shadow: 
+            box-shadow:
                 0 15px 30px -10px rgba(99, 102, 241, 0.15),
                 inset 0 0 25px rgba(99, 102, 241, 0.05);
         }
@@ -406,7 +406,7 @@
         }
 
         .organ-selector:focus,
-        .organ-selector:focus-visible { 
+        .organ-selector:focus-visible {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-glow);
         }
@@ -468,7 +468,7 @@
             margin: 0 auto 1rem auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
+
         .loader-text {
             color: var(--text-secondary);
             font-size: 0.95rem;
@@ -632,7 +632,7 @@
             transform: translateY(-3px);
             border-color: rgba(99, 102, 241, 0.35);
             border-bottom-color: var(--secondary);
-            box-shadow: 
+            box-shadow:
                 0 10px 20px -10px rgba(99, 102, 241, 0.2),
                 inset 0 0 15px rgba(99, 102, 241, 0.1);
         }
@@ -808,7 +808,7 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            
+
             /* Custom Printable Letterhead */
             .print-letterhead {
                 display: flex !important;
@@ -873,7 +873,7 @@
             }
             .diff-map-text h4 { color: #b91c1c !important; }
             .diff-map-text p { color: #475569 !important; }
-            
+
             .validation-board {
                 margin-top: 3rem !important;
                 page-break-inside: avoid;
@@ -937,7 +937,7 @@
             .dicom-metadata-grid span {
                 color: #000 !important;
             }
-            
+
             /* Print Views PACS Layout rules */
             .viewer-grid {
                 grid-template-columns: repeat(2, 220px) !important;
@@ -988,7 +988,7 @@
             letter-spacing: 0.5px;
             animation: neon-blink 1.5s ease-in-out infinite alternate;
         }
-        
+
         @keyframes neon-blink {
             0% { opacity: 0.4; box-shadow: 0 0 4px #ef4444, inset 0 0 4px #ef4444; }
             100% { opacity: 1; box-shadow: 0 0 12px #ef4444, inset 0 0 12px #ef4444; }
@@ -1084,10 +1084,10 @@
         }
         .btn-aws { border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; }
         .btn-aws:hover { border-color: #38bdf8; box-shadow: 0 8px 25px rgba(56, 189, 248, 0.25); }
-        
+
         .btn-agent { border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
         .btn-agent:hover { border-color: #a855f7; box-shadow: 0 8px 25px rgba(168, 85, 247, 0.25); }
-        
+
         .btn-etl { border-color: rgba(16, 185, 129, 0.3); color: #34d399; }
         .btn-etl:hover { border-color: #10b981; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.25); }
 
@@ -1103,7 +1103,7 @@
             justify-content: center;
         }
         .agent-modal-backdrop.active { display: flex; }
-        
+
         .agent-modal-card {
             width: 90%;
             max-width: 750px;
@@ -1126,7 +1126,7 @@
             cursor: pointer;
         }
         .agent-modal-close:hover { color: #fff; }
-        
+
         .chat-response-area {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border);
@@ -1196,7 +1196,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 Patient Admission Details
             </div>
-            
+
             <div class="patient-info-grid">
                 <div class="form-group">
                     <label for="pt-name">Patient Name</label>
@@ -1207,8 +1207,8 @@
                     <input type="text" id="pt-id" class="form-control" placeholder="Generating Accession ID..." readonly>
                 </div>
                 <div class="form-group">
-                    <label for="pt-doc">Diagnosing Physician</label>
-                    <input type="text" id="pt-doc" class="form-control" placeholder="Doctor's Name" value="Dr. Vivek, M.D.">
+                    <label for="pt-doc">Reviewer (Demo Mode)</label>
+                    <input type="text" id="pt-doc" class="form-control" placeholder="Reviewer Identity" value="Unauthenticated (Demo User)" readonly>
                 </div>
             </div>
 
@@ -1249,38 +1249,38 @@
         <section class="results-section" id="res-section">
             <div class="results-header">
                 <h2 class="results-title">AI Clinical Diagnostic Dashboard</h2>
-                <div class="severity-badge badge-normal" id="patient-triage-badge" style="font-weight: 700; text-transform: uppercase;"><span>●</span> Patient Status: Normal</div>
+                <div class="severity-badge badge-normal" id="patient-triage-badge" style="font-weight: 700; text-transform: uppercase;"><span>●</span> Screening Status: No Candidate ROI Flagged</div>
             </div>
 
             <!-- Dynamic Scan Report Cards will render here -->
             <div id="cards-container"></div>
         </section>
 
-        <!-- 6. Doctor Validation Board -->
+        <!-- 6. Demo Review Acknowledgement Board -->
         <div class="validation-board" id="val-board">
             <div class="section-title" style="color: #10b981; margin-bottom: 1.5rem;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Radiological Validation & Doctor Sign-Off
+                Demo Review Acknowledgement (Unauthenticated)
             </div>
-            
+
             <div class="validation-grid">
                 <div class="doctor-notes-area">
-                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Doctor's Observations & Clinical Remarks</label>
-                    <textarea class="doctor-notes-textarea" id="doc-notes">I have reviewed the AI-reconstructed clean scans alongside the computed PSNR metrics and isolated difference maps. The spatial resolution of the fine structural details in all organs remains intact without artificial artifacts. 
+                    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Reviewer Observations & Demo Remarks</label>
+                    <textarea class="doctor-notes-textarea" id="doc-notes">Research demo review of AI-reconstructed clean scans alongside computed PSNR/SSIM metrics and candidate difference maps.
 
-Clinical Impression: Findings conform to the diagnostic details outlined above. Ready for clinical storage/archival.</textarea>
-                    
+Status: Demo acknowledgement only — reviewer identity not authenticated. Not for clinical diagnostic use.</textarea>
+
                     <button class="btn-print" id="btn-print-report">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                        Print Official Clinical PDF Chart
+                        Print Research Demo Summary PDF
                     </button>
                 </div>
 
                 <div class="signature-box">
-                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Diagnosing Physician</span>
-                    <span id="doc-sig-name" style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: 1rem;">Dr. Vivek, M.D.</span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Review Status</span>
+                    <span id="doc-sig-name" style="font-size: 1.0rem; font-weight: 700; color: #fff; margin-top: 1rem;">Unauthenticated (Demo User)</span>
                     <div class="signature-line"></div>
-                    <span style="font-size: 0.7rem; color: var(--text-secondary); opacity: 0.6;">Authorized Digital Signature</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary); opacity: 0.6;">Research output — no authenticated clinical review recorded</span>
                 </div>
             </div>
         </div>
@@ -1339,7 +1339,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             item.id = `q-item-${safeName}`;
 
             const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            
+
             // Build organ choices based on filename hints
             let defaultOrgan = "chest";
             if (file.name.toLowerCase().includes("brain") || file.name.toLowerCase().includes("head")) {
@@ -1360,7 +1360,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             <span class="queue-item-size">${sizeMB} MB</span>
                         </div>
                     </div>
-                    
+
                     <span style="color: rgba(255,255,255,0.15); font-weight: 700; font-size: 1.2rem; align-self: center;">+</span>
 
                     <!-- Clean Reference Scan Slot -->
@@ -1373,7 +1373,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="queue-controls">
                     <select class="organ-selector">
                         <option value="chest" ${defaultOrgan === 'chest' ? 'selected' : ''}>Chest / Lung CT</option>
@@ -1414,7 +1414,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             const cleanAttachBtn = item.querySelector('.clean-attach-btn');
             const cleanThumb = item.querySelector('.clean-thumb');
             const cleanDetail = item.querySelector('.clean-details');
-            
+
             file.cleanFile = null;
 
             if (cleanAttachBtn) {
@@ -1429,7 +1429,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                     const cleanFile = e.target.files[0];
                     if (cleanFile) {
                         file.cleanFile = cleanFile;
-                        
+
                         const cleanReader = new FileReader();
                         cleanReader.onload = (ev) => {
                             if (cleanThumb) {
@@ -1437,7 +1437,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             }
                         };
                         cleanReader.readAsDataURL(cleanFile);
-                        
+
                         const cleanSizeMB = (cleanFile.size / (1024 * 1024)).toFixed(2);
                         cleanDetail.innerHTML = `
                             <span style="font-size: 0.7rem; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Clean Reference Scan</span>
@@ -1447,7 +1447,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                                 <button class="clean-remove-btn" style="background: none; border: none; padding: 0; color: #ef4444; font-size: 0.7rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Detach</button>
                             </div>
                         `;
-                        
+
                         const removeBtn = cleanDetail.querySelector('.clean-remove-btn');
                         if (removeBtn) {
                             removeBtn.onclick = (ev) => {
@@ -1498,11 +1498,11 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                 if (cardsContainer) cardsContainer.innerHTML = '';
 
                 const formData = new FormData();
-                
+
                 // Gather files and selected organ tags
                 queueFiles.forEach((file) => {
                     formData.append('images', file);
-                    
+
                     if (file.cleanFile) {
                         formData.append('clean_images', file.cleanFile);
                         formData.append('has_clean', 'true');
@@ -1510,7 +1510,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                         formData.append('clean_images', new Blob());
                         formData.append('has_clean', 'false');
                     }
-                    
+
                     formData.append('organs', file.organ || 'chest');
                 });
 
@@ -1536,28 +1536,23 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
         }
 
         function renderResultCards(results) {
-            // Calculate overall patient triage severity
-            let overallSeverity = "Normal";
-            const severities = results.map(r => r.diagnosis.severity); // "High Risk", "Mild Anomaly", "Normal"
-            
-            if (severities.includes("High Risk")) {
-                overallSeverity = "High Risk";
-            } else if (severities.includes("Mild Anomaly")) {
-                overallSeverity = "Mild Anomaly";
-            }
-            
-            // Update Triage Badge on Dashboard Header
+            // Calculate overall patient screening status
+            window.latestScanResults = results;
+            const hasCandidateROI = results.some(r => r.diagnosis && r.diagnosis.bbox);
+            const overallStatus = hasCandidateROI ? "Candidate ROI Flagged" : "No Candidate ROI Flagged";
+
+            // Update Screening Badge on Dashboard Header
             const triageBadge = document.getElementById('patient-triage-badge');
             if (triageBadge) {
-                triageBadge.className = `severity-badge ${overallSeverity === 'High Risk' ? 'badge-high' : (overallSeverity === 'Mild Anomaly' ? 'badge-mild' : 'badge-normal')}`;
-                triageBadge.innerHTML = `<span>●</span> Patient Status: ${overallSeverity}`;
+                triageBadge.className = `severity-badge ${hasCandidateROI ? 'badge-mild' : 'badge-normal'}`;
+                triageBadge.innerHTML = `<span>●</span> Screening Status: ${overallStatus} <span style="font-size:0.68rem;opacity:0.8;font-weight:normal;margin-left:4px;">(Research Demo)</span>`;
             }
 
             // Update Printable elements
             const printTriage = document.getElementById('p-print-triage');
             if (printTriage) {
-                printTriage.textContent = overallSeverity;
-                printTriage.style.color = overallSeverity === 'High Risk' ? '#ef4444' : (overallSeverity === 'Mild Anomaly' ? '#f59e0b' : '#10b981');
+                printTriage.textContent = overallStatus + " (Non-Diagnostic Research Demo)";
+                printTriage.style.color = hasCandidateROI ? '#f59e0b' : '#10b981';
             }
             const printSlices = document.getElementById('p-print-slices');
             if (printSlices) {
@@ -1567,27 +1562,46 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             results.forEach((res, index) => {
                 const card = document.createElement('div');
                 card.className = 'result-card';
-                
-                const badgeClass = res.diagnosis.severity === 'High Risk' ? 'badge-high' : 
-                                  (res.diagnosis.severity === 'Mild Anomaly' ? 'badge-mild' : 'badge-normal');
-                
-                const borderClass = res.diagnosis.severity === 'High Risk' ? 'border-high' : 
-                                   (res.diagnosis.severity === 'Mild Anomaly' ? 'border-mild' : 'border-normal');
+
+                const hasBox = res.diagnosis && res.diagnosis.bbox;
+                const badgeClass = hasBox ? 'badge-mild' : 'badge-normal';
+                const borderClass = hasBox ? 'border-mild' : 'border-normal';
 
                 const findingsList = res.diagnosis.findings.map(f => `<li>${f}</li>`).join('');
                 const recsList = res.diagnosis.recommendations.map(r => `<li>${r}</li>`).join('');
 
-                // Parse Bounding Box dimensions (Option 1)
-                const bbox = res.diagnosis.bbox || [0.4, 0.4, 0.6, 0.6];
-                const ymin = bbox[0];
-                const xmin = bbox[1];
-                const ymax = bbox[2];
-                const xmax = bbox[3];
+                // Validate and sanitize Bounding Box coordinates
+                const bbox = res.diagnosis.bbox;
+                let bboxOverlayHtml = '';
+                if (Array.isArray(bbox) && bbox.length === 4 && bbox.every(Number.isFinite)) {
+                    const rawY1 = bbox[0];
+                    const rawX1 = bbox[1];
+                    const rawY2 = bbox[2];
+                    const rawX2 = bbox[3];
 
-                const bboxTop = (ymin * 100).toFixed(2) + '%';
-                const bboxLeft = (xmin * 100).toFixed(2) + '%';
-                const bboxWidth = ((xmax - xmin) * 100).toFixed(2) + '%';
-                const bboxHeight = ((ymax - ymin) * 100).toFixed(2) + '%';
+                    const ymin = Math.max(0.0, Math.min(1.0, Math.min(rawY1, rawY2)));
+                    const xmin = Math.max(0.0, Math.min(1.0, Math.min(rawX1, rawX2)));
+                    const ymax = Math.max(0.0, Math.min(1.0, Math.max(rawY1, rawY2)));
+                    const xmax = Math.max(0.0, Math.min(1.0, Math.max(rawX1, rawX2)));
+
+                    const width = xmax - xmin;
+                    const height = ymax - ymin;
+
+                    if (width >= 0.01 && height >= 0.01) {
+                        const bboxTop = (ymin * 100).toFixed(2) + '%';
+                        const bboxLeft = (xmin * 100).toFixed(2) + '%';
+                        const bboxWidth = (width * 100).toFixed(2) + '%';
+                        const bboxHeight = (height * 100).toFixed(2) + '%';
+                        const labelStyle = ymin < 0.08 ? 'top: 2px;' : 'top: -18px;';
+
+                        bboxOverlayHtml = `
+                            <div class="neon-bbox" style="position: absolute; top: ${bboxTop}; left: ${bboxLeft}; width: ${bboxWidth}; height: ${bboxHeight}; pointer-events: none;">
+                                <div class="neon-bbox-border"></div>
+                                <div class="neon-bbox-label" style="${labelStyle}">CANDIDATE ROI</div>
+                            </div>
+                        `;
+                    }
+                }
 
                 // DICOM Panel (Option 2)
                 let dicomPanelHtml = '';
@@ -1618,12 +1632,13 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             </div>
                             <div class="viewer-label">Noisy Input Scan (QD)</div>
                         </div>
-                        
+
                         <!-- Panel 2: AI Restored Scan -->
                         <div class="viewer-panel">
                             <div class="image-frame">
                                 <div class="scan-laser"></div>
                                 <img class="viewer-img" src="data:image/png;base64,${res.denoised}">
+                                ${bboxOverlayHtml}
                             </div>
                             <div class="viewer-label">AI Restored (FD)</div>
                         </div>
@@ -1632,9 +1647,10 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                         <div class="viewer-panel">
                             <div class="image-frame">
                                 <div class="scan-laser"></div>
-                                <img class="viewer-img" src="${res.gradcam_overlay}">
+                                ${res.gradcam_overlay ? `<img class="viewer-img" src="${res.gradcam_overlay}">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;padding:1rem;text-align:center;">Grad-CAM Unavailable</div>`}
                             </div>
-                            <div class="viewer-label">GradCAM Attention Map</div>
+                            <div class="viewer-label">Grad-CAM Organ Saliency Map</div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary); text-align: center; margin-top: -3px;">(Organ Classification Saliency)</div>
                         </div>
 
                         <!-- Panel 4: Isolated Artifact Difference Map -->
@@ -1646,12 +1662,29 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             <div class="viewer-label">Isolated Difference Map</div>
                         </div>
                     </div>
-                    
+
                     <div class="analysis-column">
                         <div class="analysis-header">
                             <div class="scan-meta">
-                                <h3>${res.organ} Scan Series</h3>
+                                <h3>${res.predicted_organ || res.organ} CT Scan Series <span style="font-size: 0.8rem; font-weight: normal; color: var(--color-text-secondary);">(Selected: ${res.organ})</span></h3>
                                 <span>Slice Source: ${res.name}</span>
+                                ${res.confidence !== null && res.confidence !== undefined ? `
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
+                                    <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; background: ${res.confidence >= 80 ? 'rgba(52, 211, 153, 0.15)' : (res.confidence >= 60 ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)')}; color: ${res.confidence >= 80 ? '#34d399' : (res.confidence >= 60 ? '#fbbf24' : '#ef4444')}; border: 1px solid ${res.confidence >= 80 ? 'rgba(52, 211, 153, 0.3)' : (res.confidence >= 60 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)')};">
+                                        AI Organ Score (Uncalibrated): ${res.confidence.toFixed(1)}%
+                                    </span>
+                                    ${res.top2_predictions && res.top2_predictions.length > 1 ? `
+                                    <span style="font-size: 0.72rem; color: var(--color-text-secondary);">
+                                        Top Distribution: ${res.top2_predictions.map(p => `${p.label} (${p.prob}%)`).join(' / ')}
+                                    </span>
+                                    ` : ''}
+                                </div>
+                                ` : ''}
+                                ${res.organ_warning ? `
+                                <div style="margin-top: 0.5rem; padding: 0.5rem 0.8rem; border-radius: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                                    <span>⚠️</span> <span><strong>${res.organ_agreement === false ? 'Organ Discrepancy Alert' : 'Diagnostic Notice'}:</strong> ${res.organ_warning}</span>
+                                </div>
+                                ` : ''}
                             </div>
                             <div class="severity-badge ${badgeClass}">
                                 <span>●</span> ${res.diagnosis.severity}
@@ -1718,16 +1751,19 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                         </div>
 
                         <div class="diagnostic-card ${borderClass}">
-                            <div class="diag-title">AI Diagnostic Finding</div>
+                            <div class="diag-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>AI Screening & Candidate Findings</span>
+                                <span style="font-size: 0.7rem; color: var(--color-text-secondary); text-transform: none; font-weight: normal;">Experimental Heuristic Screening</span>
+                            </div>
                             <div class="diag-text">${res.diagnosis.diagnostic_text}</div>
-                            
+
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
                                 <div>
-                                    <div class="diag-title" style="font-size: 0.75rem; margin-bottom: 0.3rem;">Identified Pathology</div>
+                                    <div class="diag-title" style="font-size: 0.75rem; margin-bottom: 0.3rem;">Candidate Findings (ROI)</div>
                                     <ul class="bullet-list">${findingsList}</ul>
                                 </div>
                                 <div>
-                                    <div class="diag-title" style="font-size: 0.75rem; margin-bottom: 0.3rem;">Clinical Recommendations</div>
+                                    <div class="diag-title" style="font-size: 0.75rem; margin-bottom: 0.3rem;">Clinical Correlation Recommendations</div>
                                     <ul class="bullet-list">${recsList}</ul>
                                 </div>
                             </div>
@@ -1739,8 +1775,8 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                             <div class="diag-title" style="color: #c084fc; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                                 <span>🤖 LangGraph Multi-Agent Board (🌲 Pinecone Dense Vector RAG Active)</span>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span id="hitl-badge-${index}" style="font-size: 0.75rem; background: rgba(168, 85, 247, 0.2); padding: 3px 8px; border-radius: 6px; color: #c084fc; font-weight: 700;">HITL Status: ${res.agent_consultation.hitl_status || 'Pending Verification'}</span>
-                                    <button class="enterprise-btn btn-etl btn-hitl-signoff" data-index="${index}" style="padding: 3px 10px; font-size: 0.75rem;">✅ Sign-Off (HITL)</button>
+                                    <span id="hitl-badge-${index}" style="font-size: 0.75rem; background: rgba(168, 85, 247, 0.2); padding: 3px 8px; border-radius: 6px; color: #c084fc; font-weight: 700;">Status: ${res.agent_consultation.review_status || 'Research output — no authenticated clinical review recorded'}</span>
+                                    <button class="enterprise-btn btn-etl btn-hitl-signoff" data-index="${index}" style="padding: 3px 10px; font-size: 0.75rem;">📝 Acknowledge Review (Demo)</button>
                                     <button class="enterprise-btn btn-agent btn-open-modal-trigger" style="padding: 3px 10px; font-size: 0.75rem;">🤖 Consult Board</button>
                                 </div>
                             </div>
@@ -1752,24 +1788,27 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                         <div class="diagnostic-card" style="border-left-color: #38bdf8; background: rgba(56, 189, 248, 0.04);">
                             <div class="diag-title" style="color: #38bdf8; display: flex; align-items: center; justify-content: space-between;">
                                 <span>☁️ Automated Background Cloud Sync & Data Lake Telemetry</span>
-                                <span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); padding: 2px 8px; border-radius: 6px;">AWS Live Verified</span>
+                                <span style="font-size: 0.75rem; background: rgba(148, 163, 184, 0.2); padding: 2px 8px; border-radius: 6px; color: #94a3b8;">Local PACS Mode (Cloud Storage Offline)</span>
                             </div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.8rem; font-size: 0.8rem; color: #cbd5e1;">
                                 <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
                                     <div style="font-weight: 700; color: #38bdf8; margin-bottom: 0.3rem;">☁️ AWS S3 Storage</div>
-                                    <div>Status: <strong style="color: #34d399;">${(res.aws_cloud_res && res.aws_cloud_res.aws_services && res.aws_cloud_res.aws_services['1_s3_storage'] && res.aws_cloud_res.aws_services['1_s3_storage'].status) || 'Success (LIVE AWS S3)'}</strong></div>
-                                    <div style="margin-top: 0.3rem;">
-                                        <button onclick="alert('☁️ AWS S3 PACS CLOUD VAULT STATUS:\\n\\n• S3 Bucket: cascade-pacs-cloud-archive (eu-north-1)\\n• Storage Mode: AWS S3 Live PACS Cloud Vault\\n• Presigned Token Status: Authorized (15-Min Access Window)\\n• Security Compliance: AES-256 SSE Encryption & HIPAA Compliant\\n• Object URI: ${(res.aws_cloud_res && res.aws_cloud_res.aws_services && res.aws_cloud_res.aws_services['1_s3_storage'] && res.aws_cloud_res.aws_services['1_s3_storage'].s3_uri) || 's3://cascade-pacs-cloud-archive/pacs_archives/scan.png'}')" class="organ-selector" style="font-size: 0.72rem; padding: 3px 8px; margin-top: 4px; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">🔒 View S3 Cloud Vault Status</button>
+                                    <div>Status: <strong style="color: #f59e0b;">Unavailable (Offline Mode)</strong></div>
+                                    <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                        <button onclick="window.archiveArtifactToS3(${index}, 'restored_image')" class="organ-selector" style="font-size: 0.72rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">☁️ Archive Restored Scan to S3</button>
+                                        ${res.gradcam_overlay ? `<button onclick="window.archiveArtifactToS3(${index}, 'gradcam_overlay')" class="organ-selector" style="font-size: 0.72rem; padding: 4px 8px; background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; cursor: pointer;">☁️ Archive Grad-CAM to S3</button>` : ''}
+                                        <button onclick="window.archiveArtifactToS3(${index}, 'diff_map')" class="organ-selector" style="font-size: 0.72rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #f87171; cursor: pointer;">☁️ Archive Diff Map to S3</button>
+                                        ${res.agent_consultation ? `<button onclick="window.archiveArtifactToS3(${index}, 'report_json')" class="organ-selector" style="font-size: 0.72rem; padding: 4px 8px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #34d399; cursor: pointer;">☁️ Archive Report JSON to S3</button>` : ''}
                                     </div>
                                 </div>
                                 <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                                    <div style="font-weight: 700; color: #a855f7; margin-bottom: 0.3rem;">📡 AWS CloudWatch Logs</div>
-                                    <div>Stream: <strong style="color: #fff;">/aws/cascade/pacs-engine</strong></div>
-                                    <div>Status: <strong style="color: #34d399;">Logged (LIVE AWS CloudWatch)</strong></div>
+                                    <div style="font-weight: 700; color: #a855f7; margin-bottom: 0.3rem;">📡 Telemetry & Logs</div>
+                                    <div>Stream: <strong style="color: #fff;">/local/cascade/pacs-engine</strong></div>
+                                    <div>Status: <strong style="color: #34d399;">Safe Structured Telemetry Active</strong></div>
                                 </div>
                                 <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
                                     <div style="font-weight: 700; color: #34d399; margin-bottom: 0.3rem;">⚙️ DICOM ETL Data Lake</div>
-                                    <div>HIPAA PII: <strong style="color: #34d399;">De-Identified & Scrubbed</strong></div>
+                                    <div>De-Identification: <strong style="color: #34d399;">Scrubbed (Safe Harbor Demo)</strong></div>
                                     <div>Manifest: <strong style="color: #fff;">data/pipeline_output/pipeline_results.json</strong></div>
                                 </div>
                             </div>
@@ -1795,14 +1834,14 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             if (dicomRes) {
                 const ptNameInput = document.getElementById('pt-name');
                 const ptIdInput = document.getElementById('pt-id');
-                
+
                 ptNameInput.value = dicomRes.dicom_metadata.name;
                 ptIdInput.value = dicomRes.dicom_metadata.id;
-                
+
                 // Trigger visual pulse animation to draw attention
                 ptNameInput.classList.add('pulse-highlight');
                 ptIdInput.classList.add('pulse-highlight');
-                
+
                 setTimeout(() => {
                     ptNameInput.classList.remove('pulse-highlight');
                     ptIdInput.classList.remove('pulse-highlight');
@@ -1811,7 +1850,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
 
             // Set Doctor validation details and display board
             document.getElementById('doc-sig-name').textContent = document.getElementById('pt-doc').value;
-            
+
             resSection.style.display = 'block';
             valBoard.style.display = 'block';
             resSection.scrollIntoView({ behavior: 'smooth' });
@@ -1832,7 +1871,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
                 <input type="text" id="agent-query-input" class="form-control" style="flex: 1; min-width: 240px;" placeholder="Ask the Multi-Agent Board a clinical question..." value="What is the immediate differential diagnosis and protocol?">
                 <button class="enterprise-btn btn-agent" id="btn-send-query">Consult Board</button>
-                <button class="enterprise-btn btn-etl" id="btn-approve-agent">✅ Sign-Off (HITL)</button>
+                <button class="enterprise-btn btn-etl" id="btn-approve-agent">📝 Acknowledge Review (Demo)</button>
             </div>
 
             <div class="chat-response-area" id="agent-output-text">
@@ -1851,7 +1890,7 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             const btnApproveAgent = document.getElementById('btn-approve-agent');
             const agentQueryInput = document.getElementById('agent-query-input');
             const agentOutputText = document.getElementById('agent-output-text');
-            
+
             const btnTriggerEtl = document.getElementById('btn-trigger-etl');
             const btnSyncS3 = document.getElementById('btn-sync-s3');
             const btnPrint = document.getElementById('btn-print-report') || document.getElementById('btn-print');
@@ -1883,40 +1922,47 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
             document.addEventListener('click', async (e) => {
                 if (e.target && e.target.classList.contains('btn-hitl-signoff')) {
                     const btn = e.target;
-                    const idx = btn.getAttribute('data-index');
+                    const idx = parseInt(btn.getAttribute('data-index'), 10);
                     const badge = document.getElementById(`hitl-badge-${idx}`);
                     const reportText = document.getElementById(`agent-report-${idx}`);
-                    const ptDocInput = document.getElementById('pt-doc');
-                    const doctorName = (ptDocInput && ptDocInput.value) || 'Dr. Vivek, M.D.';
-                    
+                    const scanData = (window.latestScanResults && window.latestScanResults[idx]) ? window.latestScanResults[idx] : null;
+
                     btn.disabled = true;
-                    btn.textContent = '⌛ Signing Off...';
-                    
+                    btn.textContent = '⌛ Acknowledging...';
+
                     try {
+                        const scanContext = scanData ? {
+                            organ: scanData.predicted_organ || 'Organ Unspecified',
+                            findings: scanData.findings || ['Demo candidate anomaly review'],
+                            psnr_delta: scanData.metrics ? scanData.metrics.psnr_clean_vs_restored : null,
+                            ssim_delta: scanData.metrics ? scanData.metrics.ssim_clean_vs_restored : null
+                        } : {
+                            organ: 'Organ Unspecified',
+                            findings: ['Demo review acknowledged in local interface']
+                        };
+
                         const res = await fetch('/api/copilot/approve', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                physician_name: doctorName,
-                                hitl_notes: 'Verified AI reconstructed clean scan, Hounsfield attenuation, and anomaly BBox overlay.',
-                                // FIX: values must come from computation only.
-                                scan_context: { organ: 'Brain', severity: 'High Risk', psnr_delta: null, ssim_delta: null, findings: ['Confirmed by attending physician'] }
+                                hitl_notes: 'Demo user acknowledged reconstructed scan and candidate ROI overlay.',
+                                scan_context: scanContext
                             })
                         });
                         const data = await res.json();
                         if (badge) {
-                            badge.style.background = 'rgba(16, 185, 129, 0.2)';
-                            badge.style.color = '#34d399';
-                            badge.textContent = `✅ APPROVED by ${doctorName}`;
+                            badge.style.background = 'rgba(56, 189, 248, 0.2)';
+                            badge.style.color = '#38bdf8';
+                            badge.textContent = `📝 ${data.review_status || 'Demo acknowledgement recorded'}`;
                         }
                         if (reportText && data.consensus_report) {
                             reportText.textContent = data.consensus_report;
                         }
-                        btn.textContent = '✅ Signed Off';
+                        btn.textContent = '📝 Acknowledged (Demo)';
                     } catch (err) {
                         btn.disabled = false;
-                        btn.textContent = '✅ Sign-Off (HITL)';
-                        alert('Error completing HITL sign-off: ' + err);
+                        btn.textContent = '📝 Acknowledge Review (Demo)';
+                        alert('Error recording demo acknowledgement: ' + err);
                     }
                 }
             });
@@ -1945,29 +1991,23 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
 
             if (btnApproveAgent) {
                 btnApproveAgent.onclick = async () => {
-                    if (agentOutputText) agentOutputText.textContent = "👤 Processing Human-in-the-Loop (HITL) Radiologist Verification Sign-Off...";
+                    if (agentOutputText) agentOutputText.textContent = "👤 Recording Demo Review Acknowledgement (Unauthenticated)...";
                     try {
-                        const ptDocInput = document.getElementById('pt-doc');
                         const res = await fetch('/api/copilot/approve', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                physician_name: (ptDocInput && ptDocInput.value) || 'Dr. Vivek, M.D.',
-                                hitl_notes: 'Verified AI reconstructed clean scan, Hounsfield attenuation, and anomaly BBox overlay.',
+                                hitl_notes: 'Demo user acknowledgement of multi-agent board findings.',
                                 scan_context: {
-                                    organ: typeof selectedOrgan !== 'undefined' ? selectedOrgan : 'Brain',
-                                    severity: 'High Risk',
-                                    // FIX: values must come from computation only.
-                                    psnr_delta: null,
-                                    ssim_delta: null,
-                                    findings: ['Hyperdense tissue anomaly confirmed by attending physician']
+                                    organ: typeof selectedOrgan !== 'undefined' ? selectedOrgan : 'Organ Unspecified',
+                                    findings: ['Multi-agent board demo consultation acknowledged']
                                 }
                             })
                         });
                         const data = await res.json();
                         if (agentOutputText) agentOutputText.textContent = data.consensus_report || JSON.stringify(data, null, 2);
                     } catch (err) {
-                        if (agentOutputText) agentOutputText.textContent = "Error approving report: " + err;
+                        if (agentOutputText) agentOutputText.textContent = "Error recording acknowledgement: " + err;
                     }
                 };
             }
@@ -2014,36 +2054,59 @@ Clinical Impression: Findings conform to the diagnostic details outlined above. 
                 };
             }
 
+            window.archiveArtifactToS3 = async (resultIndex, artifactType) => {
+                if (!window.latestScanResults || !window.latestScanResults[resultIndex]) {
+                    alert("No processed scan result found to archive. Please run AI Denoise & Diagnostic Analysis first.");
+                    return;
+                }
+                const res = window.latestScanResults[resultIndex];
+                let payload = null;
+                if (artifactType === 'restored_image') {
+                    payload = res.denoised;
+                } else if (artifactType === 'gradcam_overlay') {
+                    payload = res.gradcam_overlay;
+                    if (!payload) {
+                        alert("Grad-CAM explanation is unavailable for this scan. Refusing to upload placeholder as real explanation.");
+                        return;
+                    }
+                } else if (artifactType === 'diff_map') {
+                    payload = res.diff;
+                } else if (artifactType === 'report_json') {
+                    payload = res.agent_consultation;
+                }
+
+                try {
+                    const response = await fetch('/api/s3/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            artifact_type: artifactType,
+                            payload: payload
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.status === 'Success') {
+                        alert(`☁️ CASCADE S3 Vault Upload Succeeded!\n\n• Artifact ID: ${data.artifact_id}\n• S3 URI: ${data.s3_uri}\n• Key: ${data.s3_key}\n• Storage Mode: ${data.storage_mode}\n• Size: ${data.size_bytes} bytes\n• Encryption: AES-256`);
+                    } else if (data.status === 'Unavailable') {
+                        alert(`☁️ CASCADE Cloud Storage Status:\n\n${data.message}\n\n• Storage Mode: ${data.storage_mode}\n• Artifact ID: ${data.artifact_id}\n• Artifact Type: ${data.artifact_type}\n• Local Vault: Safe and ready for AWS sync once credentials are authenticated.`);
+                    } else {
+                        alert(`⚠️ Upload Failed:\n\n${data.error || 'Unknown storage error'}`);
+                    }
+                } catch (err) {
+                    alert(`Network error connecting to S3 vault: ${err.message}`);
+                }
+            };
+
             if (btnSyncS3) {
                 btnSyncS3.onclick = async () => {
+                    if (!window.latestScanResults || window.latestScanResults.length === 0) {
+                        alert("Please upload and process a CT scan first to generate real artifacts before syncing to S3 vault.");
+                        return;
+                    }
                     btnSyncS3.disabled = true;
-                    btnSyncS3.textContent = "☁️ Orchestrating 3 AWS Cloud Services...";
+                    btnSyncS3.textContent = "☁️ Syncing Artifact to S3 Vault...";
                     try {
-                        const res = await fetch('/api/s3/upload', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ filename: 'pacs_consultation_report.png', patient_id: 'ACC-984210', organ: 'Brain', severity: 'High Risk' })
-                        });
-                        const data = await res.json();
-                        const s3Data = (data.aws_services && data.aws_services['1_s3_storage']) || {};
-                        const ec2Data = (data.aws_services && data.aws_services['2_ec2_server']) || {};
-                        const cwData = (data.aws_services && data.aws_services['3_cloudwatch_logging']) || {};
-                        
-                        alert(
-                            "☁️ 3 AWS Cloud Services Orchestrated Successfully!\n\n" +
-                            "1. AWS S3 Cloud Storage:\n" +
-                            "   Status: " + (s3Data.status || "Success") + "\n" +
-                            "   URI: " + (s3Data.s3_uri || "N/A") + "\n" +
-                            "   Presigned URL: " + (s3Data.presigned_url || "N/A") + "\n\n" +
-                            "2. AWS EC2 Instance Host:\n" +
-                            "   Status: " + (ec2Data.status || "Healthy") + "\n" +
-                            "   Environment: " + (ec2Data.hosting_environment || "AWS EC2 Container") + "\n\n" +
-                            "3. AWS CloudWatch System Logs:\n" +
-                            "   Status: " + (cwData.status || "Logged") + "\n" +
-                            "   Log Group: " + (cwData.log_group || "/aws/cascade/pacs-engine")
-                        );
-                    } catch (err) {
-                        alert("Error orchestrating AWS Cloud Services: " + err);
+                        await window.archiveArtifactToS3(0, 'restored_image');
                     } finally {
                         btnSyncS3.disabled = false;
                         btnSyncS3.textContent = "☁️ Sync to AWS S3 Cloud Vault";
