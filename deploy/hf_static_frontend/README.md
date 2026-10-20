@@ -39,7 +39,7 @@ This Hugging Face Space operates as a **zero-subscription static frontend** usin
 
 ### Why This Architecture?
 * **Zero Platform Hardware Costs**: Standard Docker Spaces previously triggered ZeroGPU configuration errors or CPU-Basic payment holds on this account. Migrating the Space to `sdk: static` permanently eliminates Hugging Face hardware fees while keeping the canonical Space URL (`ANURAG1909/cascade`) active and accessible.
-* **Full Computational Power**: Heavy convolutional tensor processing and multi-agent clinical workflows execute on a dedicated Always Free ARM64 compute instance (up to 4 OCPU, 24 GB RAM on OCI Ampere A1).
+* **Full Computational Power**: Heavy convolutional tensor processing and multi-agent clinical workflows execute on a dedicated Always Free ARM64 compute instance (2 OCPUs, 12 GB RAM within the 1,500 OCPU-hours / 9,000 GB-hours monthly free tier allowance on OCI Ampere A1).
 
 ---
 

@@ -24,20 +24,21 @@ graph LR
 
 ### Account Requirements & Eligibility
 1. **Oracle Cloud Account**: Register for an Oracle Cloud account at [cloud.oracle.com](https://cloud.oracle.com/).
-2. **Credit Card Verification**: Oracle requires a valid payment card during registration to verify identity. A temporary authorization hold (~$1 USD) is placed and immediately reversed.
-3. **Always Free Tenancy Ceiling vs. Recommended Instance Shape**:
-   * **Total Monthly Tenancy Allowance**: Up to **4 OCPU cores** and **24 GB RAM** (equivalent to 3,000 OCPU-hours and 18,000 GB-hours per month) across all Ampere A1 instances, plus **200 GB** total boot/block storage.
-   * **Conservative Single-Instance Recommendation**: We specifically recommend provisioning **2 OCPUs and 12 GB RAM** for the CASCADE backend VM. While a full 4 OCPU / 24 GB VM is permitted under the monthly ceiling, allocating 2 OCPUs has a substantially higher provisioning success rate in capacity-constrained data centers, leaves room for other services, and provides more than 5x the ~1.5–2 GB peak RAM required by CASCADE.
+2. **Credit Card Verification**: Oracle requires payment card details during registration for identity verification and fraud prevention. The registration process may initiate a temporary authorization charge or hold according to Oracle and issuing bank policies, but no specific authorization amount or reversal timeframe is guaranteed.
+3. **Always Free-Only Tenancy Ceiling vs. Recommended Instance Shape**:
+   * **Strict Always Free-Only Allowance**: For a strict Always Free-only account setup (without active Free Trial promotional credits or paid account upgrades), the official Oracle Always Free allowance provides up to **1,500 OCPU-hours and 9,000 GB-hours per month** for Ampere A1 Compute (`VM.Standard.A1.Flex`), which equates continuously to an allowance of **2 OCPUs and 12 GB RAM** (plus up to **200 GB** total boot and block storage).
+   * **Distinction from Trial / Paid Tiers**: While promotional Free Trial credits or upgraded Pay-As-You-Go accounts may cite or access larger pooled allocations (up to 3,000 OCPU-hours and 18,000 GB-hours per month / 4 OCPUs and 24 GB RAM), a strict free-only account is not automatically entitled to a 4-OCPU / 24-GB instance and must remain within the verified 1,500 OCPU-hour / 9,000 GB-hour monthly free allowance.
+   * **Verified Free-Only Single-Instance Recommendation**: We configure exactly **2 OCPUs and 12 GB RAM** for the CASCADE backend VM. This configuration stays strictly within the verified free-only tenancy ceiling, eliminates billing risk, and provides more than 5x the ~1.5–2 GB peak RAM required by CASCADE during peak neural inference.
    * **Home Region Restriction**: Always Free compute instances can **only** be launched in your tenancy's designated **Home Region** (selected permanently at signup). They cannot be launched in secondary subscribed regions.
 
 ### Critical Operational Realities & Policy Constraints
-* **Regional Capacity Constraints**: In certain OCI Home Regions (e.g., US-Ashburn, Frankfurt, Mumbai), Ampere A1 host capacity can occasionally be constrained ("Out of host capacity" error during creation). If encountered, attempt provisioning in alternate availability domains (e.g., AD-2, AD-3) or retry during off-peak hours.
+* **Regional Capacity Constraints & No SLA**: In certain OCI Home Regions, Ampere A1 host capacity can experience shortages ("Out of host capacity" error during creation). Always Free resources carry no guaranteed Service Level Agreement (SLA). If encountered, attempt provisioning in alternate availability domains or retry during off-peak hours. **Never upgrade to a paid account or provision paid Intel/AMD shapes to overcome capacity shortages.**
 * **OCI Idle Instance Reclamation Policy**: Oracle's terms explicitly permit the platform to automatically reclaim (stop/terminate) Always Free compute instances if metrics over a rolling 7-day period fall below:
   - CPU utilization (95th percentile): **< 20%**
   - Network utilization: **< 20%**
   - Memory utilization: **< 20%**
   *Policy Compliance*: **Do not attempt to artificially bypass or evade this policy with synthetic cron jobs, fake ping traffic, or artificial CPU loops.** If your instance is reclaimed due to prolonged inactivity, you can restart it from the OCI Console.
-* **No Guaranteed 100% Uptime**: Always Free compute instances offer no enterprise Service Level Agreement (SLA). Host maintenance, capacity reclamation, or account tier reviews can cause intermittent downtime. Always Free hosting is ideal for open-source showcases, portfolio demonstrations, and research benchmarking, but is not designed for mission-critical production.
+* **No Guaranteed 100% Uptime**: Always Free compute instances offer no enterprise Service Level Agreement (SLA). Host maintenance, capacity reclamation, or account tier reviews can cause intermittent downtime. Always Free hosting is ideal for open-source showcases, portfolio demonstrations, and research benchmarking, but is not designed for mission-critical clinical production.
 * **No Guaranteed $0 Without Discipline**: Always Free resources remain strictly $0 provided you do not provision paid Intel/AMD compute shapes, exceed 200 GB total storage, attach paid load balancers, or exceed egress bandwidth limits.
 
 ---
@@ -51,8 +52,8 @@ graph LR
    * **Placement**: Select an Availability Domain (e.g., `AD-1`).
    * **Image**: **Canonical Ubuntu 22.04 LTS (aarch64)** or **Ubuntu 24.04 LTS (aarch64)**.
    * **Shape**: Click *Change Shape* &rarr; select **Ampere (ARM)** &rarr; **VM.Standard.A1.Flex**.
-     - OCPUs: **2** (or up to 4 if dedicated)
-     - Memory: **12 GB** (or up to 24 GB)
+     - OCPUs: **2** (matching the 1,500 OCPU-hour/month Always Free allowance)
+     - Memory: **12 GB** (matching the 9,000 GB-hour/month Always Free allowance)
    * **Networking**:
      - Create new Virtual Cloud Network (VCN) or select existing.
      - Ensure **Assign a public IPv4 address** is checked.
@@ -224,6 +225,32 @@ sudo systemctl start cascade
 sudo systemctl status cascade
 ```
 
+### Alternative: Containerized Execution with Docker (`Dockerfile.arm64`)
+
+If you prefer containerized deployment over native systemd:
+
+1. **Build Context & Model Weight Consideration**:
+   * Note that `*.keras` model weights are ignored by git (`.gitignore`) and are NOT pulled during `git clone`.
+   * Because `Dockerfile.arm64` executes `COPY . /app`, you must ensure that `medical_ct_denoiser_full.keras`, `medical_ct_diagnostic_model.keras`, and the candidate artifact under `artifacts/experiments/...` are copied into the repository working tree **before** running `docker build`.
+   * Build the ARM64 image on the VM:
+     ```bash
+     docker build -f deploy/free_cpu_backend/Dockerfile.arm64 -t cascade-arm64:latest .
+     ```
+2. **Launch Container**:
+   ```bash
+   docker run -d \
+       --name cascade-backend \
+       --restart unless-stopped \
+       -p 127.0.0.1:7860:7860 \
+       -e PORT=7860 \
+       cascade-arm64:latest
+   ```
+3. **Container Lifecycle & Health Checks**:
+   * **Health Check**: `curl -I http://127.0.0.1:7860/metrics`
+   * **Live Logs**: `docker logs -f cascade-backend`
+   * **Restart**: `docker restart cascade-backend`
+   * **Graceful Shutdown**: `docker stop cascade-backend`
+
 ---
 
 ## 8. Free Subdomain, Nginx Reverse Proxy & HTTPS
@@ -276,7 +303,7 @@ server {
     }
 
     # Heavy neural inference endpoints: enforce abuse prevention & rate limiting
-    location ~ ^/(process|api/research/predict) {
+    location ~ ^/(process|api/research/denoise_dicom) {
         limit_req zone=cascade_api_limit burst=5 nodelay;
         limit_conn cascade_conn_limit 2;
 

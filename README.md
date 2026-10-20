@@ -200,7 +200,7 @@ Execute the project-local offline verification suite before launching the applic
 .\venv\Scripts\python.exe -m unittest discover tests
 ```
 
-All 126 tests must pass with exit code `0`. Tests execute 100% offline using synthetic fixtures and mock cloud clients.
+All 127 tests must pass with exit code `0`. Tests execute 100% offline using synthetic fixtures and mock cloud clients.
 
 ### Step 5: Start the Local Web Application
 Run the local development research-demo server:
@@ -227,7 +227,9 @@ python app.py
     - `medical_ct_diagnostic_model.keras`: `256,877,707` bytes | `a68b61a14c6ac170ef37a43e7447edeb90fafb3439ff0e0652ec33e1f4b64d41`
     - `candidate_unet_residual_edge_v3.keras`: `1,936,708` bytes (~1.85 MiB) | `bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea`
 * **OCI Always Free Eligibility & Policy Constraints**:
-  * OCI Always Free resource eligibility, identity verification (credit card authorization), and host capacity in the account's designated Home Region must be verified manually by the tenancy owner before launch.
+  * For a strict Always Free-only account, the official Oracle Always Free allowance provides up to **1,500 OCPU-hours and 9,000 GB-hours per month** for Ampere A1 Compute (`VM.Standard.A1.Flex`), corresponding to an allowance of **2 OCPUs and 12 GB RAM**. While promotional Free Trial credits or upgraded paid accounts may access up to 3,000 OCPU-hours / 18,000 GB-hours (4 OCPUs / 24 GB RAM), a strict free-only account is not automatically entitled to 4 OCPUs / 24 GB and must remain within the verified 2 OCPU / 12 GB RAM free-only ceiling.
+  * Account registration requires payment card details for identity and fraud verification; this may initiate a temporary authorization hold per Oracle and bank policies without a guaranteed amount or reversal timeframe.
+  * Always Free instances must be provisioned in the tenancy's permanently designated Home Region and carry no guaranteed SLA. Host capacity shortages ("Out of host capacity") can occur in high-demand regions; users should retry or select alternate availability domains rather than upgrading to a paid account.
   * Always Free compute instances are subject to Oracle's idle-instance reclamation policy (<20% CPU, memory, and network utilization over a rolling 7-day period). Continuous 100% uninterrupted uptime is not guaranteed.
 * **Regulatory & Clinical Safety Status**: CASCADE is an exploratory engineering prototype and research benchmark platform. It is **not** an FDA-cleared, CE-marked, or certified medical device (SaMD), and must not be used for clinical diagnosis, patient triage, or direct care delivery.
 
@@ -250,12 +252,12 @@ python app.py
 
 ## 8. Automated Testing & Verification Suite
 
-The repository includes a comprehensive, project-local test suite comprising **126 automated offline tests** across 10 test modules:
+The repository includes a comprehensive, project-local test suite comprising **127 automated offline tests** across 10 test modules:
 
 1. **Security & Research Endpoint Isolation ([`tests/test_research_api_security.py`](tests/test_research_api_security.py), 16 tests)**:
    * Validates endpoint isolation, 32 MB upload limit bounds, non-CT input rejection, and ephemeral in-memory processing.
    * Enforces exclusion of direct patient identifiers (`PatientName`, `PatientID`, `PatientBirthDate`) from API responses.
-2. **Upload Safety & Ephemeral Storage Hardening ([`tests/test_upload_safety_hardening.py`](tests/test_upload_safety_hardening.py), 9 tests)**:
+2. **Upload Safety & Ephemeral Storage Hardening ([`tests/test_upload_safety_hardening.py`](tests/test_upload_safety_hardening.py), 10 tests)**:
    * Validates upload isolation outside `static/`, unlinking temp files in `try/finally` blocks on success and error, extension allowlisting, and dual-layer 413 limits.
 3. **Research Reproducibility Tooling ([`tests/test_research_reproducibility_tooling.py`](tests/test_research_reproducibility_tooling.py), 16 tests)**:
    * Validates patient-disjoint manifest splits, safe dry-run mode, overwrite locks, and metric aggregation with null handling for empty anatomical masks.
@@ -297,7 +299,7 @@ Follow this checklist when setting up a fresh development environment:
 3. [ ] **Checksum Audit**: Run `Get-FileHash *.keras -Algorithm SHA256` and confirm matching digests in `MODEL_ARTIFACTS.md`.
 4. [ ] **Environment Setup**: Create a clean Python 3.11 virtual environment (`python -m venv venv`).
 5. [ ] **Dependency Installation**: Run `pip install -r requirements.txt`.
-6. [ ] **Test Gate**: Run `python -m unittest discover tests` and confirm all 126 tests pass offline.
+6. [ ] **Test Gate**: Run `python -m unittest discover tests` and confirm all 127 tests pass offline.
 7. [ ] **Local Launch**: Run `python app.py` and open `http://127.0.0.1:5000`.
 8. [ ] **Synthetic Test Scan**: Upload a non-identifying synthetic test image (ensuring no real patient data is used) to verify denoising, candidate ROI, and demo review acknowledgement.
 9. [ ] **Offline Cloud Verification**: Click "Archive Restored Scan to S3" and confirm the system reports `Status: Unavailable (Offline Mode)`.
