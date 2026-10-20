@@ -28,7 +28,7 @@ graph LR
 3. **Always Free-Only Tenancy Ceiling vs. Recommended Instance Shape**:
    * **Strict Always Free-Only Allowance**: For a strict Always Free-only account setup (without active Free Trial promotional credits or paid account upgrades), the official Oracle Always Free allowance provides up to **1,500 OCPU-hours and 9,000 GB-hours per month** for Ampere A1 Compute (`VM.Standard.A1.Flex`), which equates continuously to an allowance of **2 OCPUs and 12 GB RAM** (plus up to **200 GB** total boot and block storage).
    * **Distinction from Trial / Paid Tiers**: While promotional Free Trial credits or upgraded Pay-As-You-Go accounts may cite or access larger pooled allocations (up to 3,000 OCPU-hours and 18,000 GB-hours per month / 4 OCPUs and 24 GB RAM), a strict free-only account is not automatically entitled to a 4-OCPU / 24-GB instance and must remain within the verified 1,500 OCPU-hour / 9,000 GB-hour monthly free allowance.
-   * **Verified Free-Only Single-Instance Recommendation**: We configure exactly **2 OCPUs and 12 GB RAM** for the CASCADE backend VM. This configuration stays strictly within the verified free-only tenancy ceiling, eliminates billing risk, and provides more than 5x the ~1.5–2 GB peak RAM required by CASCADE during peak neural inference.
+   * **Verified Free-Only Single-Instance Recommendation**: We configure exactly **2 OCPUs and 12 GB RAM** for the CASCADE backend VM. This configuration stays strictly within the verified free-only Ampere A1 monthly allowance (1,500 OCPU-hours and 9,000 GB-hours per month). While keeping the compute allocation within Always Free limits is necessary to avoid compute charges, it does not guarantee that the overall account incurs zero charges if other resources (such as block volumes exceeding the 200 GB total allowance, paid load balancers, or excess outbound bandwidth) are provisioned. In addition, actual ARM64 model loading memory footprint, peak inference RAM, and latency have not yet been empirically profiled on target ARM64 hardware and require live measurement.
    * **Home Region Restriction**: Always Free compute instances can **only** be launched in your tenancy's designated **Home Region** (selected permanently at signup). They cannot be launched in secondary subscribed regions.
 
 ### Critical Operational Realities & Policy Constraints
@@ -39,7 +39,7 @@ graph LR
   - Memory utilization: **< 20%**
   *Policy Compliance*: **Do not attempt to artificially bypass or evade this policy with synthetic cron jobs, fake ping traffic, or artificial CPU loops.** If your instance is reclaimed due to prolonged inactivity, you can restart it from the OCI Console.
 * **No Guaranteed 100% Uptime**: Always Free compute instances offer no enterprise Service Level Agreement (SLA). Host maintenance, capacity reclamation, or account tier reviews can cause intermittent downtime. Always Free hosting is ideal for open-source showcases, portfolio demonstrations, and research benchmarking, but is not designed for mission-critical clinical production.
-* **No Guaranteed $0 Without Discipline**: Always Free resources remain strictly $0 provided you do not provision paid Intel/AMD compute shapes, exceed 200 GB total storage, attach paid load balancers, or exceed egress bandwidth limits.
+* **Cost Avoidance Discipline**: Always Free compute instances avoid compute charges only when kept within allowance boundaries. Avoiding account charges requires strict administrative discipline: you must not provision paid compute shapes, exceed 200 GB total storage across all boot and block volumes, attach paid load balancers, or exceed outbound data transfer quotas. Account billing is governed strictly by Oracle Cloud metering policies.
 
 ---
 
@@ -164,11 +164,16 @@ source venv/bin/activate
 python deploy/free_cpu_backend/verify_backend_models.py /opt/cascade
 ```
 
-**Expected Verification Output**:
-* `medical_ct_denoiser_full.keras`: `23,388,275` bytes | `ef84c7d1d808000a6e52b36cb1fdcbd7c929621d061cafbe61f822c2cf767842`
-* `medical_ct_diagnostic_model.keras`: `256,877,707` bytes | `a68b61a14c6ac170ef37a43e7447edeb90fafb3439ff0e0652ec33e1f4b64d41`
-* `candidate_unet_residual_edge_v3.keras`: `1,936,708` bytes | `bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea`
-* Result: `[SUCCESS] All verified model artifacts match expected digests.`
+**Model Verification Rules & Expected Output**:
+* **Mandatory Models for Service Startup**:
+  - `medical_ct_denoiser_full.keras`: `23,388,275` bytes | `ef84c7d1d808000a6e52b36cb1fdcbd7c929621d061cafbe61f822c2cf767842` (Required for Gunicorn/systemd boot and web denoising)
+  - `medical_ct_diagnostic_model.keras`: `256,877,707` bytes | `a68b61a14c6ac170ef37a43e7447edeb90fafb3439ff0e0652ec33e1f4b64d41` (Required for Gunicorn/systemd boot and organ classification)
+  If either mandatory model is missing or fails its checksum, `verify_backend_models.py` exits with code 1 (`[FAIL]`), aborting service startup.
+* **Optional Research Candidate Model**:
+  - `candidate_unet_residual_edge_v3.keras`: `1,936,708` bytes | `bc396511dfbea8d1f853b2067ededd801b3405b11caeb25157445d581fb1fcea`
+  Located at: `artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras`.
+  Classified as optional for process startup (`mandatory: False`). If omitted, the verifier issues a warning (`[WARN] Optional research candidate NOT FOUND. Fallback mode will be active.`) and returns exit code 0 (`[SUCCESS]`), allowing the primary web application to launch. However, calling `/api/research/denoise_dicom` will return HTTP 503 `UNAVAILABLE` until this candidate file is uploaded.
+* Result: `[SUCCESS] All verified model artifacts match expected digests.` (Only verifies artifacts that are present; mandatory models must pass).
 
 ---
 
@@ -231,20 +236,33 @@ If you prefer containerized deployment over native systemd:
 
 1. **Build Context & Model Weight Consideration**:
    * Note that `*.keras` model weights are ignored by git (`.gitignore`) and are NOT pulled during `git clone`.
-   * Because `Dockerfile.arm64` executes `COPY . /app`, you must ensure that `medical_ct_denoiser_full.keras`, `medical_ct_diagnostic_model.keras`, and the candidate artifact under `artifacts/experiments/...` are copied into the repository working tree **before** running `docker build`.
+   * Because `Dockerfile.arm64` executes `COPY . /app`, you must ensure that the two mandatory baseline models (`medical_ct_denoiser_full.keras`, `medical_ct_diagnostic_model.keras`) and optionally the candidate artifact under `artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras` are copied into the repository working tree **before** running `docker build`.
    * Build the ARM64 image on the VM:
      ```bash
      docker build -f deploy/free_cpu_backend/Dockerfile.arm64 -t cascade-arm64:latest .
      ```
 2. **Launch Container**:
-   ```bash
-   docker run -d \
-       --name cascade-backend \
-       --restart unless-stopped \
-       -p 127.0.0.1:7860:7860 \
-       -e PORT=7860 \
-       cascade-arm64:latest
-   ```
+   * **Option A: With Baked-in Weights**:
+     ```bash
+     docker run -d \
+         --name cascade-backend \
+         --restart unless-stopped \
+         -p 127.0.0.1:7860:7860 \
+         -e PORT=7860 \
+         cascade-arm64:latest
+     ```
+   * **Option B: With Host Volume Mounts** (keeps image weight-free):
+     ```bash
+     docker run -d \
+         --name cascade-backend \
+         --restart unless-stopped \
+         -p 127.0.0.1:7860:7860 \
+         -v /opt/cascade/medical_ct_denoiser_full.keras:/app/medical_ct_denoiser_full.keras \
+         -v /opt/cascade/medical_ct_diagnostic_model.keras:/app/medical_ct_diagnostic_model.keras \
+         -v /opt/cascade/artifacts/experiments/unet_residual_edge_v3/run_001:/app/artifacts/experiments/unet_residual_edge_v3/run_001 \
+         -e PORT=7860 \
+         cascade-arm64:latest
+     ```
 3. **Container Lifecycle & Health Checks**:
    * **Health Check**: `curl -I http://127.0.0.1:7860/metrics`
    * **Live Logs**: `docker logs -f cascade-backend`
