@@ -260,15 +260,27 @@ class TestModelRAGQuality(unittest.TestCase):
         self.assertEqual(res["status"], "unavailable")
         self.assertEqual(len(res["retrieved_chunks"]), 0)
 
-        # Test pinecone_rag_engine query_dense_rag with unconfigured index
+        # Test pinecone_rag_engine query_dense_rag with unconfigured index and local fallback disabled
         engine = pinecone_rag_engine.PineconeClinicalRAG()
-        # Mock offline
+        # Mock Pinecone offline
         engine.retriever.is_active = False
 
-        query_res = engine.query_dense_rag(organ="Chest", severity="Candidate ROI Detected")
+        query_res = engine.query_dense_rag(organ="Chest", severity="Candidate ROI Detected", allow_local_fallback=False)
         self.assertIn(query_res["retrieval_mode"], ["unconfigured", "unavailable"])
         self.assertIsNone(query_res["similarity_score"])  # Strict: NO fake 0.95!
         self.assertEqual(len(query_res["kb_references"]), 0)
+
+        # When local fallback is enabled, offline Pinecone safely falls back to local semantic RAG
+        query_res_local = engine.query_dense_rag(
+            organ="Chest",
+            severity="Candidate ROI Detected",
+            user_query="solid nodule >8mm",
+            allow_local_fallback=True
+        )
+        self.assertEqual(query_res_local["retrieval_mode"], "local_semantic")
+        self.assertIsNotNone(query_res_local["similarity_score"])
+        self.assertNotEqual(query_res_local["similarity_score"], 0.95)
+        self.assertGreater(len(query_res_local["kb_references"]), 0)
 
     # =========================================================================
     # Gate 12: Retrieval Source Citations & Grounded Generation

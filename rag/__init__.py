@@ -12,11 +12,13 @@ from .embeddings import SemanticEmbeddingEngine
 from .chunker import DocumentChunker, DocumentChunk
 from .parsers import DocumentParser
 from .retriever import ClinicalRAGRetriever
+from .local_retriever import LocalClinicalRAGRetriever
 
 __all__ = [
     "SemanticEmbeddingEngine",
     "DocumentChunker",
     "DocumentChunk",
     "DocumentParser",
-    "ClinicalRAGRetriever"
+    "ClinicalRAGRetriever",
+    "LocalClinicalRAGRetriever"
 ]

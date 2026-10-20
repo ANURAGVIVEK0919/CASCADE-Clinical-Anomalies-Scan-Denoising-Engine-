@@ -145,14 +145,15 @@ def clinical_rag_specialist_node(state: AgentState) -> AgentState:
     severity = str(ctx.get("severity", "Normal"))
     user_query = state.get("user_query", "")
     
-    # Query Pinecone / Semantic Vector RAG Engine
+    # Query Pinecone / Semantic Vector RAG Engine (with Local Semantic RAG fallback)
     rag_res = pinecone_rag_engine.query_dense_rag(organ=organ, severity=severity, user_query=user_query, top_k=2)
     
     state["kb_references"] = rag_res.get("kb_references", [])
     state["differential_diagnosis"] = rag_res.get("differential_diagnosis", [])
-    state["vector_rag_engine"] = rag_res.get("vector_engine", "Pinecone Cloud Index")
+    state["vector_rag_engine"] = rag_res.get("vector_engine", "Unavailable / No Matching Evidence")
     state["vector_similarity_score"] = rag_res.get("similarity_score")
     state["vector_top_condition"] = rag_res.get("top_match_condition", "Not Assessed")
+    state["vector_retrieval_mode"] = rag_res.get("retrieval_mode", "unavailable")
     state["current_agent"] = "Safety Auditor & Escalator Agent"
     return state
 
@@ -185,14 +186,23 @@ def human_radiologist_approval_node(state: AgentState) -> AgentState:
     kb_refs = state.get("kb_references", [])
     diff_diag = state.get("differential_diagnosis", [])
     audit_status = state.get("safety_audit_status", "Research Demo Mode")
-    vector_engine = state.get("vector_rag_engine", "Pinecone Cloud Index (Offline / Unconfigured)")
+    vector_engine = state.get("vector_rag_engine", "Unavailable / No Matching Evidence")
     sim_score = state.get("vector_similarity_score", None)
+    retrieval_mode = state.get("vector_retrieval_mode", "")
 
-    # Format similarity score truthfully
+    # Classify retrieval source label truthfully: Pinecone Cloud vs Local Semantic RAG vs Unavailable
+    if retrieval_mode == "pinecone":
+        rag_mode_label = "Pinecone Cloud"
+    elif retrieval_mode == "local_semantic":
+        rag_mode_label = "Local Semantic RAG"
+    else:
+        rag_mode_label = "Unavailable / No Matching Evidence"
+
+    # Format similarity score truthfully (never as diagnostic confidence)
     if sim_score is not None:
         sim_score_str = f"Raw Cosine Similarity: **{sim_score:.4f}** (vector relevance score, not diagnostic confidence)"
     else:
-        sim_score_str = "Not Available (Guideline retrieval index unconfigured or offline)"
+        sim_score_str = f"Not Available ({rag_mode_label})"
 
     # Safety Gate: Authentic clinical verification requires an authorized identity provider and credentialing system.
     # In unauthenticated demo mode, is_human_verified and reviewer_identity_verified are strictly False.
@@ -214,7 +224,7 @@ def human_radiologist_approval_node(state: AgentState) -> AgentState:
     state["review_status"] = review_status
     state["hitl_status"] = hitl_badge
 
-    kb_text = "\n".join([f"  • {ref}" for ref in kb_refs]) if kb_refs else "  • No matching guidelines retrieved (index offline or no matches above threshold)."
+    kb_text = "\n".join([f"  • {ref}" for ref in kb_refs]) if kb_refs else f"  • No matching guidelines retrieved ({rag_mode_label})."
     diff_text = ", ".join(diff_diag) if diff_diag else "Pending authenticated clinical evaluation"
     query_header = f"**User Inquiry**: \"{user_query}\"\n\n" if user_query else ""
     emergency_banner = "[ALERT] EMERGENCY TRIAGE ALERT: High Risk Focal Anomaly Detected!\n\n" if state.get("is_emergency") is True else ""
@@ -267,10 +277,10 @@ def human_radiologist_approval_node(state: AgentState) -> AgentState:
         f"{query_header}"
         f"{emergency_banner}"
         f"### 🤖 CASCADE Multi-Agent Medical Board Report (Research Demo)\n"
-        f"*Stateful Orchestration with Pinecone Cloud Vector RAG & Human-in-the-Loop (HITL)*\n\n"
+        f"*Stateful Orchestration with Clinical Specialist Vector RAG ({rag_mode_label}) & Human-in-the-Loop (HITL)*\n\n"
         f"**1. Radiologist Vision Agent Findings**:\n"
         f"{obs}\n\n"
-        f"**2. Clinical Specialist Pinecone Vector RAG**:\n"
+        f"**2. Clinical Specialist Vector RAG ({rag_mode_label})**:\n"
         f"  • Vector Retrieval Engine: `{vector_engine}`\n"
         f"  • Top Match Score: {sim_score_str}\n"
         f"  • Reference Differential Considerations: **{diff_text}**\n"
