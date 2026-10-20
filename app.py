@@ -976,6 +976,13 @@ def research_denoise_dicom_api():
             'status': 'REJECTED',
             'error': sanitized_msg
         }), 400
+    except FileNotFoundError as fnfe:
+        duration_ms = (time.time() - t_start) * 1000.0
+        record_research_request(success=False, duration_ms=duration_ms, status="MODEL_UNAVAILABLE")
+        return jsonify({
+            'status': 'UNAVAILABLE',
+            'error': 'Residual U-Net v3 research candidate model is offline or uninstalled on this server.'
+        }), 503
     except Exception as e:
         duration_ms = (time.time() - t_start) * 1000.0
         record_research_request(success=False, duration_ms=duration_ms, status="ERROR")

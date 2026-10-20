@@ -215,6 +215,20 @@ class TestUploadSafetyHardening(unittest.TestCase):
         self.assertIn("frame-ancestors 'self' https://huggingface.co https://*.hf.space", csp)
         self.assertNotIn('X-Frame-Options', resp.headers)
 
+    def test_research_endpoint_returns_503_when_checkpoint_missing(self):
+        """Verify /api/research/denoise_dicom gracefully returns HTTP 503 if model is uninstalled/offline."""
+        with patch('research_inference.denoise_dicom_research', side_effect=FileNotFoundError("Model file missing")):
+            fake_dcm = io.BytesIO(b"FAKE_DICOM_DATA")
+            resp = self.client.post(
+                '/api/research/denoise_dicom',
+                data={'dicom_scan': (fake_dcm, 'test.dcm')},
+                content_type='multipart/form-data'
+            )
+            self.assertEqual(resp.status_code, 503)
+            data = resp.get_json()
+            self.assertEqual(data.get('status'), 'UNAVAILABLE')
+            self.assertIn('offline or uninstalled', data.get('error', ''))
+
 
 if __name__ == '__main__':
     unittest.main()

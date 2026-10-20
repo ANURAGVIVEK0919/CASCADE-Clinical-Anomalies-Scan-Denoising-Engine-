@@ -33,13 +33,13 @@ This Hugging Face Space operates as a **zero-subscription static frontend** usin
 | - Nginx Reverse Proxy with Let's Encrypt SSL/TLS                       |
 | - Python 3.11 + Gunicorn (2 workers, 4 threads)                        |
 | - CPU-Only Neural Inference (U-Net Denoising + ResNet50V2 Diagnostics) |
-| - All 3 Neural Model Weights Verified Pre-Flight                        |
+| - Baseline Models Verified Pre-Flight (Research Model Optional)         |
 +-------------------------------------------------------------------------+
 ```
 
 ### Why This Architecture?
 * **Zero Platform Hardware Costs**: Standard Docker Spaces previously triggered ZeroGPU configuration errors or CPU-Basic payment holds on this account. Migrating the Space to `sdk: static` permanently eliminates Hugging Face hardware fees while keeping the canonical Space URL (`ANURAG1909/cascade`) active and accessible.
-* **Full Computational Power**: Heavy convolutional tensor processing and multi-agent clinical workflows execute on a dedicated Always Free ARM64 compute instance (up to 4 OCPU, 24 GB RAM on OCI Ampere A1).
+* **Full Computational Power**: Heavy convolutional tensor processing and multi-agent clinical workflows execute on a dedicated Always Free ARM64 compute instance (2 OCPUs, 12 GB RAM within the 1,500 OCPU-hours / 9,000 GB-hours monthly free tier allowance on OCI Ampere A1).
 
 ---
 
@@ -51,7 +51,7 @@ Follow the complete deployment steps in:
 
 1. Provision an **OCI Always Free Ampere A1 VM** (`VM.Standard.A1.Flex`, Ubuntu 22.04/24.04 ARM64).
 2. Install dependencies using `deploy/free_cpu_backend/requirements-arm64.txt`.
-3. Transfer the three verified local `.keras` artifacts to `/opt/cascade/`.
+3. Transfer the two mandatory baseline models (`medical_ct_denoiser_full.keras`, `medical_ct_diagnostic_model.keras`) to `/opt/cascade/`, and transfer the optional candidate model to its nested path `/opt/cascade/artifacts/experiments/unet_residual_edge_v3/run_001/candidate_unet_residual_edge_v3.keras` (required for `/api/research/denoise_dicom`; endpoint returns HTTP 503 if omitted).
 4. Configure Nginx with a free HTTPS subdomain (e.g. `https://cascade-backend.duckdns.org` via Let's Encrypt / Certbot).
 5. Start the backend with the provided `cascade.service` systemd unit.
 
