@@ -57,14 +57,14 @@ class PineconeClinicalRAG:
         seamlessly queries the local tracked clinical guideline corpus using genuine
         semantic sentence embeddings (384-d, L2 normalized).
         """
-        # Construct search query from clinical context
-        query_terms = [organ]
-        if severity and severity not in ("Normal", "No Candidate ROI Flagged"):
-            query_terms.append(severity)
+        # Construct search query from clinical context: prioritize user's direct query
         if user_query and user_query.strip():
-            query_terms.append(user_query.strip())
-
-        query_text = " - ".join(query_terms)
+            query_text = user_query.strip()
+        else:
+            query_terms = [organ]
+            if severity and severity not in ("Normal", "No Candidate ROI Flagged"):
+                query_terms.append(severity)
+            query_text = " - ".join(query_terms)
 
         # --------------------------------------------------------------------
         # Priority 1: Genuine Pinecone Cloud Retrieval (when active & working)

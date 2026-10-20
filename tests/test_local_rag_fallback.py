@@ -83,6 +83,48 @@ class TestLocalRAGFallback(unittest.TestCase):
         self.assertIn("LI-RADS", top_chunk_abdo["title"])
 
     # -------------------------------------------------------------------------
+    # 2b. Regression Test: Fleischner >8mm query prioritizes management recommendations
+    # -------------------------------------------------------------------------
+    def test_fleischner_solid_nodule_greater_than_8mm_prioritizes_management(self):
+        query = "What do the Fleischner Society guidelines say about solid pulmonary nodules larger than 8 mm?"
+        res = self.retriever.query_clinical_guidelines(query, top_k=2)
+
+        self.assertEqual(res["status"], "success")
+        self.assertEqual(res["retrieval_mode"], "local_semantic")
+        self.assertGreater(len(res["retrieved_chunks"]), 0)
+
+        top_chunk = res["retrieved_chunks"][0]
+        # Top chunk must be the specific solid nodule management recommendation, NOT title/scope
+        self.assertNotIn("Scope & Patient Population", top_chunk["title"])
+        self.assertIn("Nodules > 8 mm", top_chunk["title"])
+        self.assertEqual(top_chunk["source_file"], "fleischner_society_pulmonary_nodules.md")
+
+        # Must contain genuine cosine similarity > 0.70
+        self.assertGreater(top_chunk["score"], 0.70)
+
+        # Snippet/references must surface the actual clinical management guidance
+        top_ref = res["kb_references"][0]
+        self.assertIn("Consider follow-up CT at 3 months, PET-CT, or tissue biopsy", top_ref)
+        self.assertIn("Nodules > 8 mm", top_ref)
+
+        # Confirm through the full Medical Board consult
+        board = ASCADEMedicalBoard()
+        scan_ctx = {
+            "organ": "Chest",
+            "severity": "Candidate ROI Detected",
+            "psnr_delta": None,
+            "ssim_delta": None,
+            "findings": ["Research query: solid pulmonary nodule larger than 8 mm"]
+        }
+        board_res = board.consult(scan_ctx, user_query=query)
+        report = board_res["consensus_report"]
+
+        self.assertIn("Clinical Specialist Vector RAG (Local Semantic RAG)", report)
+        self.assertIn("Consider follow-up CT at 3 months, PET-CT, or tissue biopsy", report)
+        self.assertIn("Nodules > 8 mm", report)
+        self.assertIn("fleischner_society_pulmonary_nodules.md", report)
+
+    # -------------------------------------------------------------------------
     # 3. Unrelated queries abstain rather than return unrelated clinical guidance
     # -------------------------------------------------------------------------
     def test_unrelated_queries_abstain(self):

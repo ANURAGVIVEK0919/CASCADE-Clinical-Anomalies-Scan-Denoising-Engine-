@@ -25,6 +25,7 @@ Key Architecture & Contracts:
 """
 
 import os
+import re
 import threading
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
@@ -256,7 +257,10 @@ class LocalClinicalRAGRetriever:
             title = chunk.get("title", "Clinical Reference")
             source_file = chunk.get("source_file", "")
             content = chunk.get("content", "")
-            snippet = content[:200].replace("\n", " ").strip()
+            meta = chunk.get("metadata", {})
+            raw_text = meta.get("raw_text") or content
+            cleaned_text = re.sub(r"\s+", " ", raw_text).strip()
+            snippet = cleaned_text[:320] + ("..." if len(cleaned_text) > 320 else "")
 
             retrieved_chunk = {
                 "chunk_id": chunk.get("chunk_id"),
@@ -265,13 +269,13 @@ class LocalClinicalRAGRetriever:
                 "source_file": source_file,
                 "content": content,
                 "snippet": snippet,
-                "metadata": chunk.get("metadata", {})
+                "metadata": meta
             }
             retrieved_chunks.append(retrieved_chunk)
 
             # Format human-readable citation with source and exact similarity
             kb_references.append(
-                f"[{title}] {snippet}... (Source: {source_file} | Raw Cosine Similarity: {raw_score:.4f})"
+                f"[{title}] {snippet} (Source: {source_file} | Raw Cosine Similarity: {raw_score:.4f})"
             )
 
             # Collect source-grounded differential considerations
