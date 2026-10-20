@@ -13,3 +13,4 @@ huggingface_hub==0.28.1
 langchain==0.3.19
 langgraph==0.2.74
 python-dotenv==1.2.2
+sentence-transformers==6.1.0
