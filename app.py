@@ -12,6 +12,8 @@ import json
 import uuid
 import time
 from gradcam_utils import generate_gradcam, overlay_gradcam
+import tempfile
+from werkzeug.exceptions import RequestEntityTooLarge
 from medical_agent import ASCADEMedicalBoard
 from data_pipeline import CASCADEDICOMPipeline
 from aws_s3_storage import S3StorageVault, AWSCloudServicesManager
@@ -21,9 +23,44 @@ from telemetry import get_telemetry, sanitize_value
 # Load environment variables from .env file
 load_dotenv()
 
+# Upload limits and allowed formats
+MAX_IMAGE_UPLOAD_SIZE = 32 * 1024 * 1024  # 32 MB limit per request
+ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.bmp', '.dcm', '.dicom'}
+
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+# Secure private temporary directory completely isolated from publicly served static/ directory
+DEFAULT_UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'cascade_uploads')
+app.config['UPLOAD_FOLDER'] = os.environ.get('CASCADE_UPLOAD_FOLDER', DEFAULT_UPLOAD_FOLDER)
+app.config['MAX_CONTENT_LENGTH'] = MAX_IMAGE_UPLOAD_SIZE
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+
+@app.errorhandler(413)
+@app.errorhandler(RequestEntityTooLarge)
+def handle_payload_too_large(error):
+    """
+    Standardized HTTP 413 handler preventing raw server tracebacks or internal path leakage.
+    """
+    return jsonify({
+        'status': 'REJECTED',
+        'error': 'Upload payload exceeds maximum allowable limit of 32 MB.'
+    }), 413
+
+
+@app.after_request
+def set_secure_framing_policy(response):
+    """
+    Allow framing strictly from self and official Hugging Face Space origins.
+    Protects against malicious clickjacking while permitting authorized embedding
+    inside Hugging Face Space iframes.
+    """
+    response.headers['Content-Security-Policy'] = (
+        "frame-ancestors 'self' https://huggingface.co https://*.hf.space"
+    )
+    # Ensure legacy X-Frame-Options does not unconditionally deny Hugging Face
+    response.headers.pop('X-Frame-Options', None)
+    return response
 
 # Initialize Enterprise Managers
 medical_board = ASCADEMedicalBoard()
@@ -367,6 +404,12 @@ def index():
 
 @app.route('/process', methods=['POST'])
 def process():
+    if request.content_length and request.content_length > MAX_IMAGE_UPLOAD_SIZE:
+        return jsonify({
+            'status': 'REJECTED',
+            'error': 'Upload payload exceeds maximum allowable limit of 32 MB.'
+        }), 413
+
     # Supports both singular 'image' or multiple files under 'images'
     uploaded_files = request.files.getlist('images')
     clean_files = request.files.getlist('clean_images')
@@ -392,19 +435,27 @@ def process():
         organ = organ_tags[i] if i < len(organ_tags) else 'chest'
         organ = organ.lower()
 
-        # Save temporary files
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{i}_{file.filename}")
-        file.save(filepath)
+        ext = os.path.splitext(file.filename)[1].lower() if file.filename else ''
+        if ext not in ALLOWED_IMAGE_EXTENSIONS:
+            return jsonify({'error': f"Unsupported file extension '{ext}'. Allowed formats: PNG, JPG, JPEG, BMP, DCM, DICOM."}), 400
 
+        filepath = None
         clean_filepath = None
-        has_clean = has_clean_tags[i] == 'true' if i < len(has_clean_tags) else False
-        if has_clean and i < len(clean_files):
-            clean_file = clean_files[i]
-            if clean_file and clean_file.filename != '':
-                clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_clean_{i}_{clean_file.filename}")
-                clean_file.save(clean_filepath)
-
         try:
+            temp_id = uuid.uuid4().hex
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{temp_id}_{i}{ext}")
+            file.save(filepath)
+
+            has_clean = has_clean_tags[i] == 'true' if i < len(has_clean_tags) else False
+            if has_clean and i < len(clean_files):
+                clean_file = clean_files[i]
+                if clean_file and clean_file.filename != '':
+                    c_ext = os.path.splitext(clean_file.filename)[1].lower() if clean_file.filename else ''
+                    if c_ext not in ALLOWED_IMAGE_EXTENSIONS:
+                        return jsonify({'error': f"Unsupported reference file extension '{c_ext}'."}), 400
+                    clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_clean_{temp_id}_{i}{c_ext}")
+                    clean_file.save(clean_filepath)
+
             noisy, denoised, diff, metrics, patient_metadata = process_image(filepath, clean_filepath)
 
             if noisy is None:
@@ -550,10 +601,16 @@ def process():
 
         finally:
             # Clean up
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            if filepath and os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except OSError:
+                    pass
             if clean_filepath and os.path.exists(clean_filepath):
-                os.remove(clean_filepath)
+                try:
+                    os.remove(clean_filepath)
+                except OSError:
+                    pass
 
     if not results:
         return jsonify({'error': 'Failed to process any CT scans. Ensure you upload valid image files.'}), 500

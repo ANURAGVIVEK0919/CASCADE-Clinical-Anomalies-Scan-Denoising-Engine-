@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASCADE — Clinical Anomalies & Scan Denoising Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Top Status / Disclaimer Bar */
+        .status-banner {
+            height: 38px;
+            background: linear-gradient(90deg, #111827 0%, #1e1b4b 100%);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+        }
+        .status-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #818cf8;
+        }
+        .status-badge {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-disclaimer {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        /* Main Container & Iframe */
+        .app-container {
+            width: 100%;
+            height: calc(100% - 38px);
+            position: relative;
+        }
+        iframe#cascade-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            background-color: #0b0f19;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0b0f19;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            z-index: 10;
+            transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(99, 102, 241, 0.15);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #c7d2fe;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Placeholder Warning Screen (visible if URL is unconfigured) */
+        .unconfigured-card {
+            display: none;
+            max-width: 620px;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .unconfigured-card h2 {
+            color: #f87171;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .unconfigured-card p {
+            color: #9ca3af;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .code-box {
+            background: #1f2937;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #60a5fa;
+            text-align: left;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header bar with persistent research notice -->
+    <header class="status-banner">
+        <div class="status-brand">
+            <span>🩺 CASCADE</span>
+            <span class="status-badge">CPU-Only Engine</span>
+        </div>
+        <div class="status-disclaimer">
+            <span>Exploratory Research Benchmark — Non-Clinical / Not a Certified Medical Device (SaMD)</span>
+        </div>
+    </header>
+
+    <!-- Main application viewport -->
+    <main class="app-container">
+        <!-- Interactive loading indicator -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div id="loadingSpinner" class="spinner"></div>
+            <div id="loadingStatus" class="loading-text">Connecting to CASCADE PACS Engine...</div>
+
+            <!-- Configuration Helper (Shown if placeholder domain is detected) -->
+            <div id="unconfiguredCard" class="unconfigured-card">
+                <h2>Backend URL Configuration Required</h2>
+                <p>
+                    This Hugging Face Static Space is currently configured with the default placeholder.
+                    To complete deployment, deploy your CPU backend on OCI Ampere A1 (or Cloud Run)
+                    and configure the backend HTTPS URL below.
+                </p>
+                <div class="code-box">
+                    BACKEND_URL = "https://YOUR_BACKEND_SUBDOMAIN_HERE";
+                </div>
+                <p style="font-size: 12px; color: #6b7280;">
+                    Refer to <code>deploy/free_cpu_backend/DEPLOYMENT_GUIDE_OCI_ARM64.md</code> for full setup steps.
+                </p>
+            </div>
+        </div>
+
+        <!-- Full-screen secured iframe embedding the remote Flask backend -->
+        <iframe
+            id="cascade-frame"
+            title="CASCADE Clinical Anomalies & Scan Denoising Engine"
+            sandbox="allow-scripts allow-forms allow-same-origin allow-downloads allow-popups"
+            allow="clipboard-write"
+            loading="eager"
+            src="about:blank">
+        </iframe>
+    </main>
+
+    <script>
+        /**
+         * CASCADE — Free Static Hugging Face Frontend Wrapper
+         *
+         * Set the constant below to your live HTTPS backend domain (e.g. DuckDNS / Cloudflare / OCI).
+         * Example: const BACKEND_URL = "https://cascade-backend.duckdns.org";
+         *
+         * IMPORTANT: Do not publish this file to Hugging Face with an invalid or HTTP domain.
+         * The domain must use HTTPS to satisfy modern browser mixed-content security policies.
+         */
+        const BACKEND_URL = "https://YOUR_BACKEND_SUBDOMAIN_HERE";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const frame = document.getElementById("cascade-frame");
+            const overlay = document.getElementById("loadingOverlay");
+            const spinner = document.getElementById("loadingSpinner");
+            const statusText = document.getElementById("loadingStatus");
+            const unconfiguredCard = document.getElementById("unconfiguredCard");
+
+            // Check if user has updated the placeholder
+            if (!BACKEND_URL || BACKEND_URL.includes("YOUR_BACKEND_SUBDOMAIN_HERE")) {
+                spinner.style.display = "none";
+                statusText.style.display = "none";
+                unconfiguredCard.style.display = "block";
+                return;
+            }
+
+            // Set iframe source
+            frame.src = BACKEND_URL;
+
+            // Hide loading overlay once iframe content has loaded
+            frame.addEventListener("load", () => {
+                overlay.style.opacity = "0";
+                setTimeout(() => {
+                    overlay.style.visibility = "hidden";
+                }, 400);
+            });
+
+            // Timeout fallback: if backend takes longer than 15s (e.g. cold start)
+            setTimeout(() => {
+                if (overlay.style.visibility !== "hidden") {
+                    statusText.textContent = "Backend is initializing (cold start). Loading scans...";
+                }
+            }, 8000);
+        });
+    </script>
+</body>
+</html>

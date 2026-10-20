@@ -1,0 +1,36 @@
+# CASCADE — ARM64 Linux Container Image (OCI Ampere A1 CPU-Only)
+# Target Architecture: linux/arm64 (aarch64)
+# Python: 3.11-slim
+
+FROM python:3.11-slim
+
+# Enforce pure CPU execution and prevent CUDA discovery
+ENV CUDA_VISIBLE_DEVICES=-1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PORT=7860
+
+# Install minimal OS runtime libraries required by OpenCV and GLib
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python ARM64 dependencies using verified pre-compiled wheels
+COPY deploy/free_cpu_backend/requirements-arm64.txt /app/requirements-arm64.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /app/requirements-arm64.txt
+
+# Copy application source code
+COPY . /app
+
+# Ensure private uploads directory exists outside static/
+ENV CASCADE_UPLOAD_FOLDER=/tmp/cascade_uploads
+RUN mkdir -p /tmp/cascade_uploads
+
+EXPOSE 7860
+
+# Pre-flight model artifact verification followed by Gunicorn startup
+CMD ["sh", "-c", "python deploy/free_cpu_backend/verify_backend_models.py /app && exec gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 4 --timeout 120 app:app"]
