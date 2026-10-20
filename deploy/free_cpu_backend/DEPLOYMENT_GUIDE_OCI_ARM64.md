@@ -138,7 +138,9 @@ pip install -r deploy/free_cpu_backend/requirements-arm64.txt
 
 ## 6. Model Artifact Transfer & Verification
 
-The Hugging Face git repository and GitHub do not contain the large `.keras` model weights. You must securely copy the three verified local artifacts from your development machine to the VM.
+The GitHub repository ignores large `.keras` model checkpoints via `.gitignore`. You must securely copy model weights from your local development machine to the VM before starting services:
+* **Mandatory Baseline Models**: `medical_ct_denoiser_full.keras` and `medical_ct_diagnostic_model.keras` are strictly required by the startup integrity gate (`verify_backend_models.py`). Application startup will fail if either baseline model is absent or fails checksum validation.
+* **Optional Research Candidate Model**: `candidate_unet_residual_edge_v3.keras` is optional for initial service startup. If omitted, the server boots normally, but the `/api/research/denoise_dicom` research endpoint will return HTTP 503 `UNAVAILABLE` until this candidate checkpoint is transferred to its expected nested path.
 
 ### Transfer Commands (Run from Local Development Machine)
 ```powershell
